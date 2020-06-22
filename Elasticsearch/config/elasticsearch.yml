@@ -1,0 +1,9 @@
+cluster.name: my-elasticsearch
+network.host: 0.0.0.0
+
+cluster.initial_master_nodes: node1
+node.master: true
+node.name: node1
+
+discovery.seed_hosts: 127.0.0.1, [::1]
+http.port: 9200
