@@ -11,7 +11,7 @@ services:
     networks:
       - es_cluster
     ports:
-      - "9200:9200"
+      - "9200:${ES_HTTP_PORT}"
       - "9300:9300"
     environment:
       HOSTNAME: ${HOSTNAME}
