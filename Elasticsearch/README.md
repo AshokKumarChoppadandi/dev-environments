@@ -232,7 +232,7 @@ The below is the command to launch the elasticsearch container:
 docker-compose -f docker-compose-multinode.yml up -d
 ```
 
-[Click Here](https://github.com/AshokKumarChoppadandi/dev-environments/blob/feature/elasticsearch-docker-setup/Elasticsearch/docker-compose-multinode.yml) to see the `docker-compose-multinode.yml` file.
+[Click Here](https://github.com/AshokKumarChoppadandi/dev-environments/blob/feature/elasticsearch-docker-setup/Elasticsearch/docker-compose-mulitinode.yml) to see the `docker-compose-multinode.yml` file.
 
 To get the status of the containers:
 
