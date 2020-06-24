@@ -85,8 +85,10 @@ ENV ES_LOGS_PATH $ES_HOME/logs
 ENV ES_NETWORK_HOST 0.0.0.0
 ENV ES_HTTP_PORT 9200
 ENV ES_DISCOVERY_SEED_HOSTS "127.0.0.1, [::1]"
+ENV ES_BOOTSTRAP_MEMORY_LOCK false
 ENV ES_MASTER_NODES "node1"
 ENV PATH $ES_HOME/bin:$PATH
+ENV ES_JAVA_OPTS "-Xms512m -Xmx512m"
 
 USER elasticsearch
 ENTRYPOINT ["./es-docker-entry-point.sh"]
@@ -131,17 +133,15 @@ elasticsearch
 Before build the image, the directory structure should look like below:
 
 ```
-[hadoop@localhost Elasticsearch]$ 
-[hadoop@localhost Elasticsearch]$ ls -R
+$ ls -R
 .:
-config  Dockerfile  lib
+config  Dockerfile  es-docker-entry-point.sh  lib
 
 ./config:
 elasticsearch.yml
 
 ./lib:
 elasticsearch-7.8.0-linux-x86_64.tar.gz
-[hadoop@localhost Elasticsearch]$
 
 ```
 
@@ -176,3 +176,87 @@ Once the container is up and running, check whether the Elasticsearch is running
 
 <img src="Screenshots/ElasticsearchStatus.JPG">
 
+### Launching Elasticsearch Container using docker-compose
+
+The below is the command to launch the elasticsearch container:
+
+```
+docker-compose up -d
+```
+
+[Click Here](https://github.com/AshokKumarChoppadandi/dev-environments/blob/feature/elasticsearch-docker-setup/Elasticsearch/docker-compose.yml) to see the `docker-compose.yml` file.
+
+To get the status of the containers:
+
+```
+docker-compose ps
+```
+
+<img src="Screenshots/DockerCompose.JPG">
+
+To stop and remove the containers:
+
+```
+docker-compose down
+```
+
+### Launching Elasticsearch Container using docker-compose with env-file
+
+The below is the command to launch the elasticsearch container:
+
+```
+docker-compose -f docker-compose-env.yml --env-file env-file up -d
+```
+
+[Click Here](https://github.com/AshokKumarChoppadandi/dev-environments/blob/feature/elasticsearch-docker-setup/Elasticsearch/docker-compose-env.yml) to see the `docker-compose-env.yml` file.
+
+To get the status of the containers:
+
+```
+docker-compose -f docker-compose-env.yml --env-file env-file ps
+```
+
+<img src="Screenshots/DockerComposeEnv.JPG">
+
+To stop and remove the containers:
+
+```
+docker-compose -f docker-compose-env.yml --env-file env-file down
+```
+
+### Launching Elasticsearch Multi Node Cluster using docker-compose
+
+The below is the command to launch the elasticsearch container:
+
+```
+docker-compose -f docker-compose-multinode.yml up -d
+```
+
+[Click Here](https://github.com/AshokKumarChoppadandi/dev-environments/blob/feature/elasticsearch-docker-setup/Elasticsearch/docker-compose-multinode.yml) to see the `docker-compose-multinode.yml` file.
+
+To get the status of the containers:
+
+```
+docker-compose -f docker-compose-multinode.yml ps
+```
+
+<img src="Screenshots/DockerComposeMultinode.JPG">
+
+To stop and remove the containers:
+
+```
+docker-compose -f docker-compose-multinode.yml down
+```
+
+That's it, setup for Elasticsearch on docker is up and ready now.
+
+### ***Cheers & Happy Coding...!!!***
+
+
+### References
+
+1. https://www.elastic.co/downloads/elasticsearch
+2. https://www.elastic.co/guide/en/elasticsearch/reference/7.8/install-elasticsearch.html
+3. https://www.elastic.co/guide/en/elasticsearch/reference/7.8/targz.html
+4. https://www.elastic.co/guide/en/elasticsearch/reference/7.8/settings.html
+5. https://www.elastic.co/guide/en/elasticsearch/reference/7.8/docker.html

@@ -22,5 +22,12 @@ services:
       ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
       ES_NETWORK_HOST: 0.0.0.0
       ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
       ES_DISCOVERY_SEED_HOSTS: "127.0.0.1, [::1]"
       ES_MASTER_NODES: eshost1
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+

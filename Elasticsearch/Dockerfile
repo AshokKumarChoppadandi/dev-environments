@@ -6,9 +6,6 @@ USER root
 
 RUN yum update -y
 RUN yum install java-1.8.0-openjdk-devel -y
-RUN yum install which -y
-
-#RUN sysctl -w vm.max_map_count=262144
 
 ENV ES_HOME /usr/local/elasticsearch
 
@@ -36,8 +33,10 @@ ENV ES_LOGS_PATH $ES_HOME/logs
 ENV ES_NETWORK_HOST 0.0.0.0
 ENV ES_HTTP_PORT 9200
 ENV ES_DISCOVERY_SEED_HOSTS "127.0.0.1, [::1]"
+ENV ES_BOOTSTRAP_MEMORY_LOCK false
 ENV ES_MASTER_NODES "node1"
 ENV PATH $ES_HOME/bin:$PATH
+ENV ES_JAVA_OPTS "-Xms512m -Xmx512m"
 
 USER elasticsearch
 ENTRYPOINT ["./es-docker-entry-point.sh"]
