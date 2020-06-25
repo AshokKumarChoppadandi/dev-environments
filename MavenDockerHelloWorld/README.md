@@ -4,6 +4,13 @@
 
 The goal of this project is create a docker image from Maven project using the `docker-maven-plugin`.
 
+### Pre-requisites
+
+- Docker - 1.6.x or later
+- Java - OpenJDK 8
+- Maven - 3.6.3
+- fabric8 - 0.330
+
 ### Advantages
 
 - It can be easily integrated with `CI/CD` tools.
@@ -114,9 +121,15 @@ To pass the configurations at run time
 
 `mvn clean install -Ddocker.hub.username=DOCKER_HUB_USERNAME -Ddocker.hub.password=DOCKER_HUB_PASSWORD`
 
+<img src="Screenshots/MavenDockerHelloWorldBuild.JPG">
+
+<img src="Screenshots/MavenDockerHelloWorldContainerStart.JPG">
+
+<img src="Screenshots/MavenDockerHelloWorldLogs.JPG">
+
 ## Conclusion
 
-This helps in building the Java / Scala / WebApplications (`WAR files`) along with the environment setup ready. Docker helps in building the environment for executing the applications in it.
+This helps in building the Java / Scala (`jar files`) / WebApplications (`WAR files`) along with the environment setup ready. Docker helps in building the environment for executing the applications in it.
 
 `docker-maven-plugin` helps us in combining these two things together and delivering as a single project.
 
