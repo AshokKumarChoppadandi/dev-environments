@@ -9,7 +9,7 @@ The goal of this project is create a docker image from Maven project using the `
 - Docker - 1.6.x or later
 - Java - OpenJDK 8
 - Maven - 3.6.3
-- fabric8 - 0.330
+- fabric8 - 0.33.0
 
 ### Advantages
 
