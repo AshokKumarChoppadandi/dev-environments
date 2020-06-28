@@ -1,0 +1,83 @@
+version: '3'
+
+networks:
+  es_cluster:
+    driver: bridge
+
+services:
+  elasticsearch01:
+    image: ashokkumarchoppadandi/elasticsearch:latest 
+    hostname: eshost1
+    container_name: eshost1
+    networks:
+      - es_cluster
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      HOSTNAME: eshost1
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: eshost1
+      ES_NODE_MASTER: "true"
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: eshost2, eshost3
+      ES_MASTER_NODES: eshost1, eshost2, eshost3
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  elasticsearch02:
+    image: ashokkumarchoppadandi/elasticsearch:latest
+    hostname: eshost2
+    container_name: eshost2
+    networks:
+      - es_cluster
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    environment:
+      HOSTNAME: eshost2
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: eshost2
+      ES_NODE_MASTER: "true"
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: eshost1, eshost3
+      ES_MASTER_NODES: eshost1, eshost2, eshost3
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  elasticsearch03:
+    image: ashokkumarchoppadandi/elasticsearch:latest
+    hostname: eshost3
+    container_name: eshost3
+    networks:
+      - es_cluster
+    ports:
+      - "9202:9200"
+      - "9302:9300"
+    environment:
+      HOSTNAME: eshost3
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: eshost3
+      ES_NODE_MASTER: "true"
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: eshost1, eshost2
+      ES_MASTER_NODES: eshost1, eshost2, eshost3
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
