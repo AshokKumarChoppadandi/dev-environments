@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>MavenDockerKibana</artifactId>
+    <version>7.8.0</version>
+
+    <properties>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>es-docker-kibana-host</docker.container.hostname>
+        <docker.container.name>es-docker-kibana</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>es-docker-network</docker.network.name>
+        <docker.container.port.mapping>5601:5601</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>kibana</docker.image.name>
+
+        <kibana.download.url>https://artifacts.elastic.co/downloads/kibana/kibana-7.8.0-linux-x86_64.tar.gz</kibana.download.url>
+        <kibana.home.dir>/usr/local/kibana</kibana.home.dir>
+        <es.cluster.name>docker-elasticsearch</es.cluster.name>
+        <es.node.name></es.node.name>
+        <!--<es.node.master>true</es.node.master>-->
+        <!--<es.data.path>${es.home.dir}/data</es.data.path>
+        <es.logs.path>${es.home.dir}/logs</es.logs.path>-->
+        <!--<es.network.host>0.0.0.0</es.network.host>
+        <es.http.port>9200</es.http.port>
+        <es.discovery.seed.hosts>127.0.0.1, [::1]</es.discovery.seed.hosts>
+        <es.bootstrap.memory_lock>false</es.bootstrap.memory_lock>
+        <es.master.nodes>${es.node.name}</es.master.nodes>
+        <es.java.opts>-Xms512m -Xmx512m</es.java.opts>-->
+
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <dockerHost>unix:///var/run/docker.sock</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args/>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <!--<tag>${project.version}</tag>-->
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <!--<ES_DOWNLOAD_URL>${es.download.url}</ES_DOWNLOAD_URL>
+                                    <ES_HOME>${es.home.dir}</ES_HOME>
+                                    <ES_CLUSTER_NAME>${es.cluster.name}</ES_CLUSTER_NAME>
+                                    <ES_NODE_NAME>${es.node.name}</ES_NODE_NAME>
+                                    <ES_NODE_MASTER>${es.node.master}</ES_NODE_MASTER>
+                                    <ES_DATA_PATH>${es.data.path}</ES_DATA_PATH>
+                                    <ES_LOGS_PATH>${es.logs.path}</ES_LOGS_PATH>
+                                    <ES_NETWORK_HOST>${es.network.host}</ES_NETWORK_HOST>
+                                    <ES_HTTP_PORT>${es.http.port}</ES_HTTP_PORT>
+                                    <ES_DISCOVERY_SEED_HOSTS>${es.discovery.seed.hosts}</ES_DISCOVERY_SEED_HOSTS>
+                                    <ES_BOOTSTRAP_MEMORY_LOCK>${es.bootstrap.memory_lock}</ES_BOOTSTRAP_MEMORY_LOCK>
+                                    <ES_MASTER_NODES>${es.master.nodes}</ES_MASTER_NODES>
+                                    <ES_JAVA_OPTS>${es.java.opts}</ES_JAVA_OPTS>-->
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
