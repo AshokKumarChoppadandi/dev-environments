@@ -1,0 +1,48 @@
+version: '3'
+
+networks:
+  es_cluster:
+    driver: bridge
+
+services:
+  elasticsearch01:
+    image: ashokkumarchoppadandi/elasticsearch:latest
+    hostname: ${ES_HOST_NAME}
+    container_name: ${ES_HOST_NAME}
+    networks:
+      - es_cluster
+    ports:
+      - ${ES_HTTP_PORT}:${ES_HTTP_PORT}
+      - "9300:9300"
+    environment:
+      HOSTNAME: ${ES_HOST_NAME}
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: ${ES_HOST_NAME}
+      ES_NODE_MASTER: ${ES_NODE_MASTER}
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: ${ES_HTTP_PORT}
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: "127.0.0.1, [::1]"
+      ES_MASTER_NODES: ${ES_HOST_NAME}
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  kibana01:
+    image: ashokkumarchoppadandi/kibana:latest
+    hostname: ${KIBANA_SERVER_NAME}
+    container_name: ${KIBANA_SERVER_NAME}
+    depends_on:
+      - ${ES_HOST_NAME}
+    networks:
+      - es_cluster
+    ports:
+      - ${KIBANA_SERVER_PORT}:${KIBANA_SERVER_PORT}
+    environment:
+      ELASTICSEARCH_HOSTS: "http://${ES_HOST_NAME}:${ES_HTTP_PORT}"
+      KIBANA_SERVER_PORT: ${KIBANA_SERVER_PORT}
+      KIBANA_SERVER_HOST: 0.0.0.0
+      KIBANA_SERVER_NAME: ${KIBANA_SERVER_NAME}
