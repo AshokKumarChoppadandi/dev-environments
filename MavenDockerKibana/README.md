@@ -13,7 +13,7 @@ The below maven command builds the Docker image and save it to our local machine
 mvn docker:build
 ```
 
-Building an image from the latest version of Kibana. To get the latest version of Elasticsearch. [Click here](https://www.elastic.co/downloads/kibana)
+Building an image from the latest version of Kibana. To get the latest version of Kibana. [Click here](https://www.elastic.co/downloads/kibana)
 
 ```
 mvn docker:build \
@@ -100,7 +100,7 @@ The below maven command stop the running container and remove it.
 mvn docker:stop
 ```
 
-### Using `docker-compose`
+## Using `docker-compose`
 
 #### One Node Cluster
 
