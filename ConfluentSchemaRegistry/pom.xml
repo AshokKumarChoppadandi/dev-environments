@@ -15,7 +15,7 @@
         <docker.hub.username>REPLACE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
         <docker.hub.password>REPLACE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
         <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
-        <docker.image.name>confluent-kafka-zookeeper</docker.image.name>
+        <docker.image.name>confluent-schema-registry</docker.image.name>
         <docker.container.hostname>schemaregistry</docker.container.hostname>
         <docker.container.name>schemaregistry</docker.container.name>
         <schema.registry.hostname>${docker.container.name}</schema.registry.hostname>
