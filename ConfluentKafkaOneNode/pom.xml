@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.bigdata.docker.kafka</groupId>
+    <artifactId>ConfluentKafkaOneNode</artifactId>
+    <version>5.3.3</version>
+
+    <properties>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPLACE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPLACE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>confluent-kafka-one-node</docker.image.name>
+        <confluent.kafka.download.url>https://packages.confluent.io/archive/5.3/confluent-5.3.3-2.12.tar.gz?_ga=2.20540280.1183036142.1594210431-1676542575.1594210431</confluent.kafka.download.url>
+        <docker.container.hostname>confluentkafka</docker.container.hostname>
+        <docker.container.name>confluentkafka</docker.container.name>
+        <zookeeper.port.mapping>2181:2181</zookeeper.port.mapping>
+        <kafka.broker.port.mapping>9092:9092</kafka.broker.port.mapping>
+        <kafka.connect.port.mapping>8083:8083</kafka.connect.port.mapping>
+        <schema.registry.port.mapping>8081:8081</schema.registry.port.mapping>
+
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>es-docker-network</docker.network.name>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <dockerHost>unix:///var/run/docker.sock</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args/>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+                            <run>
+                                <env>
+                                    <HOSTNAME>${docker.container.hostname}</HOSTNAME>
+                                    <CONFLUENT_KAFKA_DOWNLOAD_URL>${confluent.kafka.download.url}</CONFLUENT_KAFKA_DOWNLOAD_URL>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${zookeeper.port.mapping}</port>
+                                    <port>${kafka.broker.port.mapping}</port>
+                                    <port>${kafka.connect.port.mapping}</port>
+                                    <port>${schema.registry.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
