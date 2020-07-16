@@ -15,16 +15,16 @@
         <docker.hub.username>REPLACE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
         <docker.hub.password>REPLACE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
         <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
-        <docker.image.name>confluent-kafka-zookeeper</docker.image.name>
+        <docker.image.name>confluent-kafka-connect</docker.image.name>
         <docker.container.hostname>connect</docker.container.hostname>
         <docker.container.name>${docker.container.hostname}</docker.container.name>
         <kafka.connect.hostname>${docker.container.name}</kafka.connect.hostname>
 
         <kafka.broker.container.name>broker</kafka.broker.container.name>
-        <kafka.advertised.listeners>PLAINTEXT://broker:9092</kafka.advertised.listeners>
+        <kafka.advertised.listeners>PLAINTEXT:\/\/broker:9092</kafka.advertised.listeners>
 
         <schema.registry.container.name>schemaregistry</schema.registry.container.name>
-        <schema.registry.url>http://${schema.registry.container.name}:8081</schema.registry.url>
+        <schema.registry.url>http:\/\/${schema.registry.container.name}:8081</schema.registry.url>
 
         <kafka.connect.cluster.group.id>connect-cluster</kafka.connect.cluster.group.id>
         <kafka.connect.key.convertor>io.confluent.connect.avro.AvroConverter</kafka.connect.key.convertor>
@@ -81,6 +81,10 @@
                                 </tags>
                             </build>
                             <run>
+                                <links>
+                                    <link>${kafka.broker.container.name}:${kafka.broker.container.name}</link>
+                                    <link>${schema.registry.container.name}:${schema.registry.container.name}</link>
+                                </links>
                                 <env>
                                     <HOSTNAME>${docker.container.hostname}</HOSTNAME>
                                     <KAFKA_ADVERTISED_LISTENERS>${kafka.advertised.listeners}</KAFKA_ADVERTISED_LISTENERS>
