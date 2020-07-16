@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.bigdata.docker.kafka</groupId>
+    <artifactId>ConfluentKafkaConnect</artifactId>
+    <version>5.3.3</version>
+
+    <properties>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPLACE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPLACE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>confluent-kafka-zookeeper</docker.image.name>
+        <docker.container.hostname>connect</docker.container.hostname>
+        <docker.container.name>${docker.container.hostname}</docker.container.name>
+        <kafka.connect.hostname>${docker.container.name}</kafka.connect.hostname>
+
+        <kafka.broker.container.name>broker</kafka.broker.container.name>
+        <kafka.advertised.listeners>PLAINTEXT://broker:9092</kafka.advertised.listeners>
+
+        <schema.registry.container.name>schemaregistry</schema.registry.container.name>
+        <schema.registry.url>http://${schema.registry.container.name}:8081</schema.registry.url>
+
+        <kafka.connect.cluster.group.id>connect-cluster</kafka.connect.cluster.group.id>
+        <kafka.connect.key.convertor>io.confluent.connect.avro.AvroConverter</kafka.connect.key.convertor>
+        <kafka.connect.value.convertor>io.confluent.connect.avro.AvroConverter</kafka.connect.value.convertor>
+        <kafka.connect.configs.topic>docker-connect-configs</kafka.connect.configs.topic>
+        <kafka.connect.offsets.topic>docker-connect-offsets</kafka.connect.offsets.topic>
+        <kafka.connect.statuses.topic>docker-connect-statuses</kafka.connect.statuses.topic>
+        <kafka.config.storage.replication.factor>1</kafka.config.storage.replication.factor>
+        <kafka.offset.storage.replication.factor>1</kafka.offset.storage.replication.factor>
+        <kafka.status.storage.replication.factor>1</kafka.status.storage.replication.factor>
+        <kafka.connect.host>${docker.container.hostname}</kafka.connect.host>
+        <kafka.connect.port>8083</kafka.connect.port>
+        <kafka.connect.port.mapping>${kafka.connect.port}:${kafka.connect.port}</kafka.connect.port.mapping>
+
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>es-docker-network</docker.network.name>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <dockerHost>unix:///var/run/docker.sock</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args/>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+                            <run>
+                                <env>
+                                    <HOSTNAME>${docker.container.hostname}</HOSTNAME>
+                                    <KAFKA_ADVERTISED_LISTENERS>${kafka.advertised.listeners}</KAFKA_ADVERTISED_LISTENERS>
+                                    <KAFKA_CONNECT_CLUSTER_GROUP_ID>${kafka.connect.cluster.group.id}</KAFKA_CONNECT_CLUSTER_GROUP_ID>
+                                    <KAFKA_CONNECT_KEY_CONVERTOR>${kafka.connect.key.convertor}</KAFKA_CONNECT_KEY_CONVERTOR>
+                                    <KAFKA_CONNECT_VALUE_CONVERTOR>${kafka.connect.value.convertor}</KAFKA_CONNECT_VALUE_CONVERTOR>
+                                    <SCHEMA_REGISTRY_URL>${schema.registry.url}</SCHEMA_REGISTRY_URL>
+                                    <CONNECT_CONFIGS_TOPIC>${kafka.connect.configs.topic}</CONNECT_CONFIGS_TOPIC>
+                                    <CONNECT_OFFSETS_TOPIC>${kafka.connect.offsets.topic}</CONNECT_OFFSETS_TOPIC>
+                                    <CONNECT_STATUSES_TOPIC>${kafka.connect.statuses.topic}</CONNECT_STATUSES_TOPIC>
+                                    <CONFIG_STORAGE_REPLICATION_FACTOR>${kafka.config.storage.replication.factor}</CONFIG_STORAGE_REPLICATION_FACTOR>
+                                    <OFFSET_STORAGE_REPLICATION_FACTOR>${kafka.offset.storage.replication.factor}</OFFSET_STORAGE_REPLICATION_FACTOR>
+                                    <STATUS_STORAGE_REPLICATION_FACTOR>${kafka.status.storage.replication.factor}</STATUS_STORAGE_REPLICATION_FACTOR>
+                                    <CONNECT_HOST>${kafka.connect.host}</CONNECT_HOST>
+                                    <CONNECT_PORT>${kafka.connect.port}</CONNECT_PORT>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${kafka.connect.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
