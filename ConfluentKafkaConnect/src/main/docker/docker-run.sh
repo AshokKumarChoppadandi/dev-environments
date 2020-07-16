@@ -1,0 +1,21 @@
+docker run -idt \
+-e HOSTNAME=connect \
+-e KAFKA_ADVERTISED_LISTENERS="PLAINTEXT:\/\/broker:9092" \
+-e KAFKA_CONNECT_CLUSTER_GROUP_ID=connect-cluster \
+-e KAFKA_CONNECT_KEY_CONVERTOR=io.confluent.connect.avro.AvroConverter \
+-e KAFKA_CONNECT_VALUE_CONVERTOR=io.confluent.connect.avro.AvroConverter \
+-e SCHEMA_REGISTRY_URL="http:\/\/schemaregistry:8081" \
+-e CONNECT_CONFIGS_TOPIC=docker-connect-configs \
+-e CONNECT_OFFSETS_TOPIC=docker-connect-offsets \
+-e CONNECT_STATUSES_TOPIC=docker-connect-statuses \
+-e CONFIG_STORAGE_REPLICATION_FACTOR=1 \
+-e OFFSET_STORAGE_REPLICATION_FACTOR=1 \
+-e STATUS_STORAGE_REPLICATION_FACTOR=1 \
+-e CONNECT_HOST=connect \
+-e CONNECT_PORT=8083 \
+--hostname connect \
+--name connect \
+--link broker:broker \
+--link schemaregistry:schemaregistry \
+-p 8083:8083 \
+ashokkumarchoppadandi/confluent-kafka-connect:latest sh
