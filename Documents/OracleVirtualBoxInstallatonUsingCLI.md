@@ -162,7 +162,7 @@ vboxmanage --version
 
 vboxmanage list vms
 
-vboxmanger list os_types
+vboxmanage list ostypes
 ```
 
 <img src="Screenshots/ValidateInstall.png">
