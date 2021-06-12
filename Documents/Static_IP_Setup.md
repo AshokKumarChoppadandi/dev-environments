@@ -16,7 +16,7 @@ Static IP address for a machine / server is required. It is, because whenever th
 
     `ssh root@192.168.0.129`
 
-    <img src="Screenshots/StaticIP_SSHRemoteServer.png">  
+    <img src="Screenshots/StaticIP_SSHRemoteServer.png">
 
 - Verify the NETWORK ADAPTER, NETMASK and BROADCAST address using the command `ifconfig`
 
