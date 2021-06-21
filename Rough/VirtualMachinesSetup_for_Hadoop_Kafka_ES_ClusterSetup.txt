@@ -1,0 +1,132 @@
+Static IP
+
+su
+
+vi /etc/sysconfig/network-scripts/ifcfg-enp0s3
+
+
+# Node 101
+------------------------------------------------
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=static
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=enp0s3
+UUID=fc806764-2795-49d9-850b-158d09f5c2c2
+DEVICE=enp0s3
+ONBOOT=yes
+IPADDR=192.168.0.101
+NETMASK=255.255.0.0
+GATEWAY=192.168.0.1
+DNS=8.8.8.8
+
+init 6
+
+Node 102
+------------------------------------------------
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=static
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=enp0s3
+UUID=f6bd523e-7067-45fb-a58f-79b82df34715
+DEVICE=enp0s3
+ONBOOT=yes
+IPADDR=192.168.0.102
+NETMASK=255.255.0.0
+GATEWAY=192.168.0.1
+DNS=8.8.8.8
+
+init 6
+
+Node 103
+------------------------------------------------
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=static
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=enp0s3
+UUID=c4e7a30a-7304-42cb-b73d-193057dd4e9e
+DEVICE=enp0s3
+ONBOOT=yes
+IPADDR=192.168.0.103
+NETMASK=255.255.0.0
+GATEWAY=192.168.0.1
+DNS=8.8.8.8
+
+init 6
+
+# Installing Java - OpenJDK 8
+
+dnf install java-1.8.0-openjdk-devel -y
+
+scp /home/ashok/Downloads/confluent-community-5.5.3-2.12.tar ashok@192.168.0.101:/ashok/home/Downloads/
+
+tar -xzvf confluent-community-5.5.3-2.12.tar -C /usr/local/
+
+ln -s /usr/local/confluent-5.5.3/ /usr/local/confluent
+
+mkdir -p /home/ashok/zookeeper/zk-data-1
+
+mkdir -p /home/ashok/kafka/data-dir-1
+
+vi /etc/profile
+
+# JAVA_HOME
+export JAVA_HOME=/usr/lib/jvm/java
+PATH=$PATH:$JAVA_HOME/bin
+
+# CONFLUENT_HOME
+export CONFLUENT_HOME=/usr/local/confluent
+PATH=$PATH:$CONFLUENT_HOME/bin
+
+source /etc/profile
+
+systemctl status firewalld
+
+systemctl stop firewalld
+
+systemctl disable firewalld
+
+vi /usr/local/confluent/etc/kafka/zookeeper.properties
+
+dataDir=/home/ashok/zookeeper/zk-data-1
+
+zookeeper-server-start -daemon /usr/local/confluent/etc/kafka/zookeeper.properties
+
+vi /usr/local/confluent/etc/kafka/server.properties
+
+broker.id=101
+listeners=PLAINTEXT://192.168.0.101:9092
+log.dirs=/home/ashok/kafka/data-dir-1
+zookeeper.connect=192.168.0.101:2181
+
+kafka-server-start -daemon /usr/local/confluent/etc/kafka/server.properties
+
+jps
+
+kafka-topics --bootstrap-server 192.168.0.101:9092,192.168.0.102:9092,192.168.0.103:9092 --list
+
+kafka-topics --bootstrap-server 192.168.0.101:9092,192.168.0.102:9092,192.168.0.103:9092 --create --topic first-topic --partitions 1 --replication-factor 3
+

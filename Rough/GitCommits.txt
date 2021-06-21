@@ -1,0 +1,93 @@
+git commands:
+
+
+BASIC:
+------------------------------------------
+
+1. clone								Done
+
+	git clone <RepositoryURL>
+
+	RepositoryURL : Https / SSH
+
+2. Add 									Done
+
+	git add <FileName>
+
+3. commit 								Done
+
+	git commit -m "Commit Message"
+
+4. Push									Done
+
+	git push
+
+5. Pull									Done
+
+	git pull
+
+6. Checkout								Done
+
+	git checkout <Branch Name>
+
+7. Status								Done
+
+	git status
+
+8. Branch								Done
+
+	git branch
+
+	git branch -a
+
+9. Log	- Give the log of commits
+
+	git log								Done
+
+10. Fetch - To fetch the latest branches in Remote repository
+
+	git fetch							Done
+
+11. Diff - To know the differences
+
+	git diff HEAD <file_name>
+
+12 Restore - To remove the changes / uncommitted changes			Done
+
+	git restore <file_name>
+
+	git restore --staged <file_name>
+
+ADVANCED:
+------------------------------------------
+13. Git Squash / Rebase									Done
+
+	Merging multiple commits into 1 commit
+
+	git rebase -i HEAD~<number of commits>
+
+14. To revert a commit 									Done
+
+	git reset --hard <commit_id>
+
+15. Force Push 											Done
+
+	git push -f
+
+16. Cherry-pick 										Done
+
+	To get the same commit into current branch from other branch
+
+	git cherry-pick <commit>
+
+17. Rebase												Done
+
+	Rebasing with parent branch
+
+	git rebase <parent branch>
+
+18. Amend												Done
+
+	This is used to modify the Author Name, Commit Time, Commit Message
+
+	git commit --amend

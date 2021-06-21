@@ -1,0 +1,64 @@
+Creating a Sudo User:
+
+
+1. Login as ROOT user to the remote server
+
+2. Add a user
+
+	useradd <username>
+
+3. Generate a Password to the user
+
+	passwd <username>
+
+4. Verify the user
+
+	id <username>
+
+5. In CentOS 8 Linux server all members of the wheel group have sudo access. So all you have to do is append user account to the wheel group using the usermod command command:
+
+	usermod -aG wheel <username>
+
+User account <usernmae> now have sudo privileges. Validate by logging in as <username> user.
+
+6. Logout as root user
+
+7. ssh <>@<Remote Host / IP Address>
+
+8. Trying checking the Sudo access to the user.
+
+	1. id
+
+	2. grep '^<username>' /etc/passwd
+
+	3. grep '^wheel' /etc/group
+
+9. Now try checking the access in other way by editing a file which has permissions only for roon user.
+
+	vi /etc/profile		# This will open the file but prompt as 'Read Only'. Normal user cannot edit this.
+
+	sudo vi /etc/profile # This will allow us to edit the file. But it will ask for user password
+
+Sometimes the needs to run the commands without password for that the below steps need to be followed:
+
+1. Login as <username> user
+
+	ssh <username>@<Hostname / IP Address>
+
+2. Add the USER in the /etc/sudoers file
+
+	sudo vi /etc/sudoers	# This will ask for password for first time
+
+	## Add the below line:
+
+		root	ALL=(ALL)	ALL 				# This line already exists
+		centos	ALL=(ALL)	NOPASSWD: ALL		# Add this line
+
+	## Modify this line
+
+		%wheel	ALL=(ALL)	NOPASSWD: ALL		# Just delete the Comment
+
+	# Save the file
+
+3. Logout and Login again to check the sudo access without password prompt
+

@@ -1,0 +1,147 @@
+Apache Hive Installation
+
+1. Dowload Apache Hive (https://hive.apache.org/downloads.html)
+
+	wget https://apachemirror.wuchna.com/hive/hive-2.3.9/apache-hive-2.3.9-bin.tar.gz
+
+2. Untar the file
+
+	sudo tar -xzvf apache-hive-2.3.9-bin.tar.gz -C /usr/local/
+
+3. Create a Soft Link
+
+	sudo ln -s /usr/local/apache-hive-2.3.9-bin /usr/local/hive
+
+4. Export Hive Home, HIVE_CONF_DIR and add to Path
+
+	vi ~/.bashrc
+
+	export HIVE_HOME=/usr/local/hive
+	export HIVE_CONF_DIR=$HIVE_HOME/conf
+	export PATH=$PATH:$HIVE_HOME/bin
+
+5. HADOOP_HOME much be defined otherwise in .bashrc file
+
+6. Create the required directories in HDFS
+
+	hadoop fs -mkdir /tmp 						# This should be already created in HDFS, if not create it.
+	hadoop fs -mkdir -p /user/hive/warehouse	# Hive default warehouse directory
+	hadoop fs -chmod g+w /tmp
+	hadoop fs -chmod g+w /user/hive/warehouse
+
+7 Settingup MySQL as Metastore
+	
+	# Install MySQL Server
+
+	# Login as root
+	mysql -u root -p
+
+	# Create metastore database
+	create database metastore;
+
+	CREATE USER 'hive'@'%' IDENTIFIED BY 'Hive@123';
+	CREATE USER 'hive'@'localhost' IDENTIFIED BY 'Hive@123';
+	CREATE USER 'hive'@'127.0.0.1' IDENTIFIED BY 'Hive@123';
+	CREATE USER 'hive'@'192.168.0.211' IDENTIFIED BY 'Hive@123';
+
+	# Grant Privileges
+	GRANT all privileges on metastore.* to 'hive'@'%';
+	GRANT all privileges on metastore.* to 'hive'@'localhost';
+	GRANT all privileges on metastore.* to 'hive'@'127.0.0.1';
+	GRANT all privileges on metastore.* to 'hive'@'192.168.0.211';
+
+	# Flush Privileges
+	flush privileges;
+
+8. Download or Copy MySQL jar to Hive configuration directory
+
+	sudo yum install mysql-connector-java -y		# This will download jar and save in /usr/share/java
+
+	sudo cp /usr/share/java/mysql-connector-java.jar $HIVE_HOME/lib/
+
+9. Edit hive-site.xml
+
+	<configuration>
+	    <property>
+	        <name>javax.jdo.option.ConnectionURL</name>
+	        <value>jdbc:mysql://192.168.0.211/metastore?createDatabaseIfNotExist=true</value>
+	        <description>metadata is stored in a MySQL server</description>
+	    </property>
+	    <property>
+	        <name>javax.jdo.option.ConnectionDriverName</name>
+	        <value>com.mysql.cj.jdbc.Driver</value>
+	        <description>MySQL JDBC driver class</description>
+	    </property>
+	    <property>
+	        <name>javax.jdo.option.ConnectionUserName</name>
+	        <value>hive</value>
+	        <description>user name for connecting to mysql server</description>
+	    </property>
+	    <property>
+	        <name>javax.jdo.option.ConnectionPassword</name>
+	        <value>Hive@123</value>
+	        <description>password for connecting to mysql server</description>
+	    </property>
+	    <property>
+	        <name>hive.server2.transport.mode</name>
+	        <value>binary</value>
+	        <description>Set to http to enable HTTP transport mode</description>
+	    </property>
+	    <property>
+	        <name>hive.server2.thrift.http.port</name>
+	        <value>10001</value>
+	        <description>HTTP port number to listen on</description>
+	    </property>
+	    <property>
+	        <name>hive.server2.thrift.http.max.worker.threads</name>
+	        <value>500</value>
+	        <description>Maximum worker threads in the server pool</description>
+	    </property>
+	    <property>
+	        <name>hive.server2.thrift.http.min.worker.threads</name>
+	        <value>5</value>
+	        <description>Minimum worker threads in the server pool</description>
+	    </property>
+	    <property>
+	        <name>hive.server2.thrift.http.path</name>
+	        <value>cliservice</value>
+	        <description>The service endpoint</description>
+	    </property>
+	    <property>
+	        <name>hive.server2.enable.doAs</name>
+	        <value>FALSE</value>
+	        <description>
+	            Setting this property to true will have HiveServer2 execute
+	            Hive operations as the user making the calls to it.
+	        </description>
+	    </property>
+	</configuration>
+
+10. Run the schematool
+
+	schematool -dbType mysql -initSchema		# This command should create lot of table in MySQL metastore database.
+
+11. Start Hive, check by creating a sample table and execute queries.
+
+	vi input.txt
+
+	123,ABC,India
+	456,LMN,US
+
+	hdfs dfs -put input.txt /user/centos/
+
+	hive 				# Using hive is deprecated
+
+	create database db1;
+
+	create table xyz (id int, name string, loc string) row format delimited fields terminated by ',';
+
+	load data inpath '/user/centos/input.txt' into table xyz;
+
+	select * from xyz;
+
+	select count(1) from xyz;
+
+12. Start Hiveserver2 and Beeline
+
+	hive --service hiveserver2 --hiveconf hive.root.logger=INFO,console

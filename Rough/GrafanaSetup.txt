@@ -1,0 +1,61 @@
+Installing Grafana on Administration Node
+
+1. Login to Administration Node as root user.
+
+	su
+
+	cd ~/Downloads
+
+2. Download Grafana
+
+	wget https://dl.grafana.com/oss/release/grafana-7.5.6.linux-amd64.tar.gz
+
+3. Extract Grafana
+
+	tar -xzvf grafana-7.5.6.linux-amd64.tar.gz -C /usr/local
+
+4. Create a Soft link
+
+	ln -s /usr/local/grafana-7.5.6 /usr/local/grafana
+
+5. Edit /usr/local/grafana/conf/defaults.ini file to allow anonymous access
+
+	vi /usr/local/grafana/conf/defaults.ini
+
+	enabled = true
+
+	org_name = My Org
+
+	org_role = Admin
+
+6. Start Grafana Server
+
+	/usr/local/grafana/bin/grafana-server
+
+7. Check at localhost:3000
+
+8. If it works then stop it and setup Grafana as a Service
+
+	vi /etc/systemd/system/grafana.service
+
+	[Unit]
+	Description=Setup Zookeeper Service
+	
+	[Service]
+	User=root
+	Group=root
+	ExecStart=/usr/local/grafana/bin/grafana-server
+	SuccessExitStatus=143
+	
+	[Install]
+	WantedBy=multi-user.target
+
+9. Enable Grafana Service
+
+	systemctl enable grafana.service
+
+	systemctl start grafana.service
+
+	systemctl daemon-reload
+
+10. Check again at localhost:3000

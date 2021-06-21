@@ -1,0 +1,72 @@
+kafka-topics --bootstrap-server bigdata.cluster.node101:9092,bigdata.cluster.node102:9092,bigdata.cluster.node103:9092 --create --topic first-topic --replication-factor 3 --partitions 1
+
+kafka-avro-console-producer \
+   --topic test-topic \
+   --broker-list broker1:9092,broker2:9092,broker3:9092 \
+   --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"count","type":"int"}]}' \
+   --property schema.registry.url=http://schemaregistry:8081
+
+
+kafka-avro-console-producer \
+   --topic test-topic \
+   --broker-list bigdata.cluster.node101:9092,bigdata.cluster.node102:9092,bigdata.cluster.node103:9092 \
+   --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"count","type":"int"}]}' \
+   --property schema.registry.url=http://bigdata.cluster.node101:8081
+
+
+docker run -it -d -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock dockersamples/visualizer
+
+
+
+
+docker swarm init --advertise-addr 192.168.99.101:2377
+
+To get the Manager Token:
+
+docker swarm join-token manager
+
+To get the Worker Token:
+
+docker swarm join-token worker
+
+To join the SWARM Cluster as a Manager
+
+docker swarm join --token <Mangaer Token> <IP Address of SWARM Initialized Manager>:<Port Number>
+
+Example:
+
+For Manager:
+
+docker swarm join --token SWMTKN-1-0qawo1l5d30aun1523fttl29fhowo4751gc2fq99cyku9cpdkz-d4wegogkp4zvixqn9gq1i0fpc 192.168.99.101:2377
+
+For Worker:
+
+docker swarm join --token SWMTKN-1-0qawo1l5d30aun1523fttl29fhowo4751gc2fq99cyku9cpdkz-6zw5rymjitvo6hwv62oswdq2k 192.168.99.101:2377
+
+Qt8sDzbAR-m-esholsX4PA
+Qt8sDzbAR-m-esholsX4PA
+
+curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d @TwitterSourceConnector.json http://ip172-18-0-90-c2kvkb5mrepg00b1b10g-18083.direct.labs.play-with-docker.com/connectors
+
+curl -X DELETE http://ip172-18-0-90-c2kvkb5mrepg00b1b10g-18083.direct.labs.play-with-docker.com/connectors/TwitterSourceConnector
+
+
+CREATE STREAM TWITTER_FILTERED WITH (KAFKA_TOPIC='twitter-filtered', VALUE_FORMAT='AVRO') AS SELECT 
+CREATEDAT,
+ID,
+TEXT,
+GEOLOCATION,
+PLACE,
+USER -> NAME,
+RETWEETCOUNT,
+LANG,
+HASHTAGENTITIES
+FROM TWITTER_STREAM
+EMIT CHANGES;
+
+docker run -d   --net="host"   --pid="host"   -v "/:/host:ro"   quay.io/prometheus/node-exporter:latest   --path.rootfs=/host
+
+docker run -d --name prometheus -p 9090:9090 -v /home/ashok/Documents/prometheus/prometheus_node_exporter.yml:/etc/prometheus/prometheus.yml prom/prometheus
+
+
+'192.168.99.103:9100', '192.168.99.104:9100', '192.168.99.105:9100'

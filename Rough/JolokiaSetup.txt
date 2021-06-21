@@ -1,0 +1,49 @@
+JOLOKIA SETUP
+
+NOTE: JOLOKIA AGENT HAS TO BE INSTALLED ON EVERY BROKER
+
+1. Login to Kafka Broker Node as root user
+
+	ssh root@bigdata.cluster.node101
+
+2. Create a directory for Jolokia JVM Agent jar
+
+	mkdir /usr/local/jolokia
+	cd /usr/local/jolokia
+
+2. Download Jolokia JVM Agent
+
+	wget https://repo1.maven.org/maven2/org/jolokia/jolokia-jvm/1.6.2/jolokia-jvm-1.6.2-agent.jar
+
+3. Edit the Kafka Service file under /etc/systemd/system/
+
+	vi /etc/systemd/system/kafka.service
+
+	[Unit]
+	Description=Setup Kafka Service
+
+	[Service]
+	User=root
+	Group=root
+	Environment="KAFKA_HEAP_OPTS=-Xmx2048M"
+	Environment="KAFKA_OPTS=-javaagent:/usr/local/jmx_exporter/jmx_prometheus_javaagent-0.15.0.jar=8080:/usr/local/jmx_exporter/kafka.yml -javaagent:/usr/local/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*"
+	ExecStart=/usr/local/confluent/KafkaAsService.sh
+	ExecStop=/usr/local/confluent/bin/kafka-server-stop
+	SuccessExitStatus=143
+
+	[Install]
+	WantedBy=multi-user.target
+
+6. Reload the systemctl daemon and restart kafka service
+
+	systemctl daemon-reload
+
+	systemctl restart kafka.service
+
+7. After restarting the Broker check the Jolokia agent with the below curl command
+
+	curl bigdata.cluster.node101:8778/jolokia
+
+	curl bigdata.cluster.node101:8778/jolokia/read/kafka.server:type=KafkaRequestHandlerPool,name=RequestHandlerAvgIdlePercent | jq
+
+	curl bigdata.cluster.node101:8778/jolokia/read/kafka.server:name=UnderReplicatedPartitions,type=ReplicaManager/Value | jq

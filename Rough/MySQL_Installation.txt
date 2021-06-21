@@ -1,0 +1,48 @@
+MYSQL INSTALLATION:
+
+1. Download YUM repository from MYSQL Community
+
+	Visit : https://dev.mysql.com/downloads/repo/yum/
+
+	Download rpm file for Red Hat Enterprise Linux 7 / 8 based on our OS.
+
+	https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+
+2. Validate the downloaded rpm file with md5sum
+
+	md5sum mysql80-community-release-el7-3.noarch.rpm
+
+3. Install the rpm file using yum localinstall
+
+	sudo yum localinstall mysql80-community-release-el7-3.noarch.rpm -y
+
+4. Install MySQL Server
+
+	sudo yum install mysql-server -y
+
+5. Start MySQL Service
+
+	sudo systemctl start mysqld
+
+	sudo systemctl status mysqld
+
+6. Fetch the default Root Password
+
+	sudo grep 'temporary password' /var/log/mysqld.log
+
+7. MySQL Secure Installation
+
+	sudo mysql_secure_installation
+
+	* Enter the default / temporary password fetched from the log
+	* Set up new password for root
+	* Confirm password for root
+	* Remove anonymous users - Yes
+	* Disallow root login remotely - Yes
+	* Remove test database and access to it - No
+	* Reload privilege tables now - Yes
+
+8. Checking the MySQL Version
+
+	mysqladmin -u root -p version
+

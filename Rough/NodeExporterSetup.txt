@@ -1,0 +1,64 @@
+
+Documentation:
+
+https://prometheus.io/docs/guides/node-exporter/
+
+Download link:
+
+https://prometheus.io/download/#node_exporter
+
+1. Login to the Machine as Root user:
+
+	ssh root@bigdata.cluster.node101
+
+2. Download Node Exporter tar file
+
+	cd /home/ashok/Downloads/
+
+	wget https://github.com/prometheus/node_exporter/releases/download/v1.1.2/node_exporter-1.1.2.linux-amd64.tar.gz
+
+3. Extract it to /usr/local/
+
+	tar -xzvf node_exporter-1.1.2.linux-amd64.tar.gz -C /usr/local/
+
+4. Create a Soft Link:
+
+	ln -s /usr/local/node_exporter-* /usr/local/node_exporter
+
+5. Start the Node Exporter with the below command:
+
+	/usr/local/node_exporter/node_exporter
+
+6. Once started check at bigdata.cluster.node101:9100 in the browser.
+
+7. If it works fine then stop it and set it as a Service
+
+	vi /etc/systemd/system/node_exporter.service
+
+	[Unit]
+	Description=Node Exporter Service
+	
+	[Service]
+	User=root
+	Group=root
+	ExecStart=/usr/local/node_exporter/node_exporter
+	SuccessExitStatus=143
+	
+	[Install]
+	WantedBy=multi-user.target
+
+8. Reload the services
+
+	systemctl daemon-reload
+
+9. Start the Node Exporter Service
+
+	systemctl start node_exporter.service
+
+10. Enable the service at Boot
+
+	systemctl enable node_exporter.service
+
+11. Check the status of the Service
+
+	systemctl status node_exporter.service

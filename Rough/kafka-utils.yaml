@@ -1,0 +1,8 @@
+---
+  clusters:
+    cluster-1:
+      broker_list:
+        - "bigdata.cluster.node101:9092,bigdata.cluster.node102:9092,bigdata.cluster.node103:9092"
+      zookeeper: "bigdata.cluster.node103:2181,bigdata.cluster.node103:2181,bigdata.cluster.node103:2181/kafka"
+  local_config:
+    cluster: cluster-1

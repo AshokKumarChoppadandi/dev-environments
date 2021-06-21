@@ -1,0 +1,47 @@
+yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.6.jar pi 10 10
+
+create database emp;
+
+
+create table employee (id int, name string, salary int) row format delimited fields terminated by ',';
+
+load data inpath '/user/root/employees.csv' into table employee;
+
+
+123,Ashok,10000
+456,Kumar,15000
+789,Choppadandi,20000
+
+select * from employee;
+select count(1) from employee;
+
+
+
+
+Access token : 3018002550-eSYe8tUhnjILSwQvcgtuOV1IMaYwVFmsjQukxcV
+
+Access token secret : 6cK88rDXrh6TwGpauDiK7TcLxJPEGFr3t6LZtfHgmaGO5
+
+API key: gBoDUxfnt3GEAQEH3pBq1SkhR
+
+API secret key: peFbh6PS7TJU4WtN2TCqTb25G80x3w4acnqYtUnqPBaB2vYqM6
+
+
+
+
+
+{
+  "name": "hdfs-sink-connector",
+  "config": {
+    "connector.class": "io.confluent.connect.hdfs.HdfsSinkConnector",
+    "tasks.max": "1",
+    "topics": "twitter-tweets",
+    "hdfs.url": "hdfs://namenode:9000/user/root/tweets_orc/",
+    "flush.size": "100",
+    "format.class": "io.confluent.connect.hdfs.orc.OrcFormat",
+    "orc.code": "snappy",
+    "partitioner.class": "FieldPartitioner",
+    "partition.field.name": "LANG"
+  }
+}
+

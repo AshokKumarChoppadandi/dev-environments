@@ -1,0 +1,34 @@
+UPDATING KAFKA CONFFIGURATIONS
+
+The following order will be followed for priority of configs:
+
+	1. Dynamic Per-Broker config stored in Zookeeper
+	2. Dynamic cluster wide default config stored in Zookeeper
+	3. Static Broker config from server.properties
+	4. Kafka default configs (https://kafka.apache.org/081/documentation.html#brokerconfigs)
+
+Since Kafka 1.1, it is possible to change some configurations without restarting the brokers. Because configs are stored in Zookeepers and Brokers pick up these configs at Run Time / Start Time.
+
+There are multiple ways to update the configurations of Kafka. Some of them given below:
+
+	1. Manually edit the server.properties files on all the Brokers and manually restart them 1 by 1.
+
+	2. Manually edit the server.properties files on all the Brokers and restart them 1 by 1 using automatic Rolling Restart script from Yelp Tools (Kafka Utils)
+
+	3. Using kafka-configs command, this is bundled with Apache Kafka & Confluent Kafka. 
+
+Updating Configurations using kafka-configs command.
+
+	# Per Broker Config
+	kafka-configs --bootstrap-server bigdata.cluster.broker1:9092,bigdata.cluster.broker2:9092,bigdata.cluster.broker3:9092 --entity-type brokers --entity-name 132 --alter --add-config log.cleaner.threads=2
+
+	# Describe Configs Per Broker
+	kafka-configs --bootstrap-server bigdata.cluster.broker1:9092,bigdata.cluster.broker2:9092,bigdata.cluster.broker3:9092 --entity-type brokers --entity-name 132 --describe
+
+	# Delete Config Per Broker
+	kafka-configs --bootstrap-server bigdata.cluster.broker1:9092,bigdata.cluster.broker2:9092,bigdata.cluster.broker3:9092 --entity-type brokers --entity-name 132 --alter --delete-config log.cleaner.threads
+
+	# Cluster-wide Config
+	kafka-configs --bootstrap-server bigdata.cluster.broker1:9092,bigdata.cluster.broker2:9092,bigdata.cluster.broker3:9092 --entity-type brokers --entity-default --alter --add-config log.cleaner.threads=2
+
+Note: Check in Zoo Navigator when the kafka-configs are updated

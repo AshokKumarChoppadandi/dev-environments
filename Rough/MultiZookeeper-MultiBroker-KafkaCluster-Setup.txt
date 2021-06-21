@@ -1,0 +1,298 @@
+1. Create VMs
+
+2. Login using SSH
+
+3. Login as Root user
+
+4. dnf update -y 
+
+5. dnf install java-1.8.0-openjdk-devel -y
+
+6. Add JAVA_HOME & PATH to /etc/profile
+
+7. Disable RAM Swap:
+
+   Add this line to /etc/sysctl.conf
+
+   vm.swappiness=1
+
+8. Add all the kafka brokers & zookeepers hosts to /etc/hosts
+
+	Mock the DNS with the IP address (Static IP)
+
+	192.168.0.101	bigdata.cluster.node101
+	192.168.0.102	bigdata.cluster.node102
+	192.168.0.103	bigdata.cluster.node103
+
+9. Download Confluent Kafka, Untar and Configure it
+
+	Download URL : https://www.confluent.io/previous-versions
+
+	  i. Download : wget https://packages.confluent.io/archive/5.5/confluent-community-5.5.3-2.12.tar.gz?_ga=2.208510674.1138347089.1620895901-1685148809.1617976286
+
+	 ii. Untar : tar -xzvf confluent-community-5.5.3-2.12.tar.gz -C /usr/local
+
+	iii. Create Soft Link : ln -s /usr/local/confluent-5.5.3 /usr/local/confluent
+
+     iv. Configure with the below configuration properties:
+
+     vi /usr/local/confluent/etc/kafka/zookeeper.properties
+
+     # Zookeeper data storage directory
+     dataDir=/data/zookeeper-1
+
+     # Zookeeer port number for clients to connect
+     clientPort=2181
+
+     # Maximum number of connections limit per-ip. Diabling it (0 for disable)
+     maxClientCnxns=0
+
+     # Time units in milliseconds used by Zookeeper for heartbeats.
+     # The minimum session timeout will be twice the tickTime
+     tickTime=2000
+
+     # The number of ticks that can take for the initial synchronization
+     initLimit=10
+
+     # The number of ticks that can pass between the request and response
+     syncLimit=5
+
+     # Zookeeper servers. These are the servers defined in /etc/hosts file (DNS mocking)
+     server.1=bigdata.cluster.node101:2888:3888
+     server.2=bigdata.cluster.node102:2888:3888
+     server.3=bigdata.cluster.node103:2888:3888
+
+10. Create myid file under zookeeper dataDir with the server number. For example: 1
+
+    echo 1 >> /data/zookeeper-1/myid
+
+11. Start the Zookeeper in foreground
+
+	zookeeper-server-start /usr/local/confluent/etc/kafka/zookeeper.properties
+
+12. Verify the server is up and running
+
+13. If server runs fine without any issues then stop it and start it again in Background or in Daemon mode.
+
+    zookeeper-server-start -daemon /usr/local/confluent/etc/kafka/zookeeper.properties
+
+14. Connect to the Zookeeper shell and verify it again,
+
+    zookeeper-shell 192.168.0.101:2181
+
+    ls /
+
+    quit (OR) Ctrl + c 
+
+15. Verifying the zookeeper with 4 letter words
+
+	echo "ruok" | nc 192.168.0.101:2181 ; echo
+
+	ERROR: ruok is not executed because it is not in the whitelist.
+
+16. Setting up the Zookeeper as Service
+
+	Create a shellscript in /usr/local/confluent/ directory
+
+	vi /usr/local/confluent/ZookeeperAsService.sh
+
+	#!/bin/bash
+
+	/usr/local/confluent/bin/zookeeper-server-start /usr/local/confluent/etc/kafka/zookeeper.properties
+
+	chmod +x /usr/local/confluent/ZookeeperAsService.sh
+
+	Create a Service file under /etc/systemd/system/
+
+	vi /etc/systemd/system/zookeeper.service
+
+/**
+ExecStart=/usr/local/kafka-server/bin/zookeeper-server-start.sh /usr/local/kafka-server/config/zookeeper.properties
+ExecStop=/usr/local/kafka-server/bin/zookeeper-server-stop.sh
+Restart=on-abnormal
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now zookeeper
+sudo systemctl enable --now kafka
+*/
+
+	[Unit]
+	Description=Zookeeper Service Startup
+
+	[Service]
+	ExecStart=/usr/local/confluent/ZookeeperAsService.sh
+
+	[Install]
+	WantedBy=multi-user.target
+
+18. Enable the Zookeeper Service
+
+	systemctl enable zookeeper
+
+17. Check the Service
+
+	systemctl start zookeeper
+	systemctl status zookeeper
+	systemctl stop zookeeper
+	systemctl restart zookeeper
+
+Zookeeper is successfully Installed and Configured.
+
+Zookeeper Monitoring Tool - ZooNavigator
+
+18. Starting a ZooNavigator docker container:
+
+docker run -d \
+  --network host \
+  -e HTTP_PORT=8000 \
+  --name zoonavigator \
+  --restart unless-stopped \
+  elkozmon/zoonavigator:latest
+
+19. Open localhost:9000 on the host machine.
+
+	Enter connection string as :
+
+	192.168.0.101:2181,192.168.0.102:2181,192.168.0.103:2181
+
+	Username and Password are empty
+
+20. ZooNavigator will open with the Zookeeper cluster details.
+
+
+Kafka Cluster Setup:
+
+1. vi /usr/local/confluent/etc/kafka/server.properties
+
+   # The id of the broker. This must be set to a unique integer for each broker.
+   broker.id=101
+   
+   # The address the socket server listens on. It will get the value returned from
+   # java.net.InetAddress.getCanonicalHostName()
+   listeners=PLAINTEXT://192.168.0.101:9092
+   
+   # Hostname and port the broker will advertise to producers and consumers. If not set, 
+   # it uses the value for "listeners" if configured.  Otherwise, it will use the value
+   # returned from java.net.InetAddress.getCanonicalHostName().
+   advertised.listeners=PLAINTEXT://bigdata.cluster.node101:9092
+
+   # The number of threads that the server uses for receiving requests from the network and sending responses to the network
+   num.network.threads=3
+
+   # The number of threads that the server uses for processing requests, which may include disk I/O
+   num.io.threads=8
+
+   # The send buffer (SO_SNDBUF) used by the socket server
+   socket.send.buffer.bytes=102400
+
+   # The receive buffer (SO_RCVBUF) used by the socket server
+   socket.receive.buffer.bytes=102400
+
+   # The maximum size of a request that the socket server will accept (protection against OOM)
+   socket.request.max.bytes=104857600
+
+   # A comma separated list of directories under which to store log files
+   log.dirs=/home/ashok/kafka/data-dir-1
+
+   # Default Replication factor 
+   default.replication.factor=3
+
+   # The default number of log partitions per topic.
+   num.partitions=8
+
+   # Minimum number of ISR to have in order to minimize the data loss.
+   min.insync.replicas=2
+
+   # The number of threads per data directory to be used for log recovery at startup and flushing at shutdown.
+   num.recovery.threads.per.data.dir=1
+
+   # Switch to enable topic deletion or not, default value is false.
+   delete.topic.enable=false
+
+   # Auto creation of kafka topics.
+   auto.create.topics.enable=true
+
+   # The replication factor for the group metadata internal topics "__consumer_offsets" and "__transaction_state"
+   offsets.topic.replication.factor=3
+   transaction.state.log.replication.factor=3
+   transaction.state.log.min.isr=2
+
+   # The minimum age of a log file to be eligible for deletion due to age
+   log.retention.hours=168
+
+   # The maximum size of a log segment file. When this size is reached a new log segment will be created.
+   log.segment.bytes=1073741824
+
+   # The interval at which log segments are checked to see if they can be deleted according
+   # to the retention policies
+   log.retention.check.interval.ms=300000
+
+
+   # Zookeeper connection string 
+   zookeeper.connect=bigdata.cluster.node101:2181,bigdata.cluster.node102:2181,bigdata.cluster.node101:2181/kafka
+
+   # Timeout in ms for connecting to zookeeper
+   zookeeper.connection.timeout.ms=18000
+
+2. Increase the File limits configs. Allow to open 100,000 file descriptors
+
+   Add the below two lines in /etc/security/limits.conf
+
+   vi /etc/security/limits.conf 
+
+   * hard nofile 100000
+   * soft nofile 100000
+
+3. Restart the Machines.
+
+   init 6
+
+4. Start Kafka Server and Verify it
+
+   kafka-server-start /usr/local/confluent/etc/kafka/server.properties
+
+   Once it is successfully working, stop it and set the Kafka as a Service
+
+5. Setup Kafka as a Service
+
+   Create a shellscript as follows under /usr/local/confluent/
+
+   vi /usr/local/confluent/KafkaAsService.sh
+
+   #!/bin/bash
+
+   /usr/local/confluent/bin/kafka-server-start /usr/local/confluent/etc/kafka/server.properties
+
+   Provide execute permissions as follows
+
+   chmod +x /usr/local/confluent/KafkaAsService.sh
+
+   Create a Service File under /etc/systemd/system/
+
+   vi /etc/systemd/system/kafka.service
+
+   [Unit]
+   Description=Setup Kafka Service
+
+   [Service]
+   ExecStart=/usr/local/confluent/KafkaAsService.sh
+
+   [Install]
+   WantedBy=multi-user.target
+
+6. Enable Kafka Service
+
+   systemctl enable kafka
+
+7. Start Kafka as a Service
+
+   systemctl start kafka
+   systemctl status kafka
+   systemctl stop kafka
+   systemctl restart kafka   
+
+8. Restart the Machines
+
+9. Start the Kafka Manager UI with docker image
+
+docker run -d -e ZK_HOSTS=192.168.0.101:2181,192.168.0.102:2181,192.168.0.103:2181 --network host kafkamanager/kafka-manager

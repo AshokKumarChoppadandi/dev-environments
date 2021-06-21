@@ -1,0 +1,127 @@
+Documentation:
+
+https://prometheus.io/docs/alerting/latest/alertmanager/
+
+Download link:
+
+	https://github.com/prometheus/alertmanager/releases
+
+
+1. Login to machine as a Root User
+
+	ssh root@bigdata.cluster.node101
+
+2. Download Alert manager:
+
+	cd /home/ashok/Downloads
+
+	wget https://github.com/prometheus/alertmanager/releases/download/v0.22.1/alertmanager-0.22.1.linux-amd64.tar.gz
+
+3. Extract it to /usr/local/
+
+	tar -xzvf alertmanager-0.22.1.linux-amd64.tar.gz -C /usr/local/
+
+4. Create a Soft Link:
+
+	ln -s /usr/local/alertmanager-* /usr/local/alertmanager
+
+5. Create an AlertManager config file:
+
+	vi /usr/local/alertmanager/alertmanager.yml
+
+	route:
+	  group_by: ['alertname']
+	  group_wait: 30s
+	  group_interval: 5m
+	  repeat_interval: 1h
+	  receiver: 'SendEmailAlert'
+	receivers:
+	- name: 'SendEmailAlert'
+	  email_configs:
+	  - to: 'to_email@gmail.com'
+	    from: 'from_email@gmail.com'
+	    smarthost: 'smtp.gmail.com:587'
+	    auth_username: 'from_email@gmail.com'
+	    auth_identity: 'from_email@gmail.com'
+	    auth_password: 'email_password'
+
+6. Start the Alert Manager
+
+	/usr/local/alertmanager/alertmanager --config.file /usr/local/alertmanager/alertmanager.yml -web.external-url=http://bigdata.cluster.node101:9093
+
+7. Check at http://bigdata.cluster.node101:9093
+
+8. If it works fine set it AlertManager as a Service
+
+	vi /etc/systemd/system/alertmanager.service
+
+	[Unit]
+	Description=Alert Manager Service
+	
+	[Service]
+	User=root
+	Group=root
+	ExecStart=/usr/local/alertmanager/alertmanager --config.file /usr/local/alertmanager/alertmanager.yml -web.external-url=http://bigdata.cluster.node101:9093
+	SuccessExitStatus=143
+	
+	[Install]
+	WantedBy=multi-user.target
+
+9. Reload the services
+
+	systemctl daemon-reload
+
+10. Start the Alert Manager Service
+
+	systemctl start alertmanager.service
+
+11. Enable the service at Boot
+
+	systemctl enable alertmanager.service
+
+12. Check the status of the Service
+
+	systemctl status alertmanager.service
+
+13. Create alert_rules.yml file for generating the alerts:
+
+	vi /usr/local/prometheus/alert_rules.yml
+
+	groups:
+	 - name: InstanceDownAlert
+	   rules:
+	   - alert: InstanceDown
+	     expr: up == 0
+	     for: 1m
+
+13. Modify the prometheus config file and restart Prometheus service
+
+	vi /usr/local/prometheus/prometheus.yml
+
+	# my global config
+	global:
+	  scrape_interval:     15s
+	  evaluation_interval: 15s 
+	alerting:
+	  alertmanagers:
+	  - static_configs:
+	    - targets:
+	      - ALERT_MANAGER_URL
+	rule_files:
+	  - "alert_rules.yml"
+	scrape_configs:
+	  - job_name: 'kafka'
+	    - targets: [bigdata.cluster.node101:8080,bigdata.cluster.node102:8080,bigdata.cluster.node103:8080]
+
+	  - job_name: 'zookeeper'
+	    static_configs:
+	    - targets: [bigdata.cluster.node101:8090,bigdata.cluster.node102:8090,bigdata.cluster.node103:8090]
+	  
+	  - job_name: 'node_exporter'
+	    static_configs:
+	    - targets: [bigdata.cluster.node101:9100]
+
+14. Restart Prometheus Service
+
+	systemctl restart prometheus.service
+

@@ -1,0 +1,97 @@
+Kafka Resiliency Test
+
+1. Create a Topic from Kafka Manager or CLI
+
+kafka-topics --bootstrap-server bigdata.cluster.node101:9092,bigdata.cluster.node102:9092,bigdata.cluster.node103:9092 --create --topic perf-test --replication-factor 3 --partitions 6
+
+
+2. Generate a file with random data with the below command:
+
+base64 /dev/random | head -c 10000 | egrep -ao "\w" | tr -d '\n' > input_file.txt
+
+3. Use the Kafka Producer Performance test script to produce / publish the message to Kafka.
+
+kafka-producer-perf-test --topic perf-test --num-records 10000 --throughput 10 --payload-file input_file.txt --producer-props acks=1 bootstrap.servers=bigdata.cluster.node101:9092,bigdata.cluster.node102:9092,bigdata.cluster.node103:9092
+
+4. Consume the data using Kafka Console Consumer:
+
+kafka-console-consumer --bootstrap-server bigdata.cluster.node101:9092,bigdata.cluster.node102:9092,bigdata.cluster.node103:9092 --topic perf-test
+
+5. Kill the Kafka Service on Node 101
+
+ssh ashok@bigdata.cluster.node101
+
+su
+
+systemctl stop kafka.service
+
+systemctl status kafka.service
+
+6. Observe the Kafka Manager, in the UI it will show the under-replicated partitions
+
+7. Observe the kafka-producer-perf-test producer & kafka-console-consumer, they will show error for sometime and then producer will start producing the data & consumer consumes it without any issues.
+
+8. Now kill the Kafka Service Node102
+
+ssh ashok@bigdata.cluster.node102
+
+su
+
+systemctl stop kafka.service
+
+systemctl status kafka.service
+
+9. Observe the Kafka Manager, in the UI it will show the under-replicated partitions
+
+10. Observe the kafka-producer-perf-test producer & kafka-console-consumer, they will show error for sometime and then producer will start producing the data & consumer consumes it without any issues.
+
+11. Now finally kill the last Broker i.e., Node 103
+
+ssh ashok@bigdata.cluster.node102
+
+su
+
+systemctl stop kafka.service
+
+systemctl status kafka.service
+
+12. Observe the Kafka Manager, in the UI it will show that no Kafka Brokers are alive.
+
+13. Observe the kafka-producer-perf-test producer & kafka-console-consumer, they will show errors.
+
+14. Now start the Broker on Node 103
+
+ssh ashok@bigdata.cluster.node103
+
+su
+
+systemctl start kafka.service
+
+15. After starting the Kafka Service, the producer and consumer will start again with warnings.
+
+16. Check in Kafka Manager UI again to see the changes
+
+17. Start the services on both Node 101 & Node 102.
+
+AUTO RECOVERY FROM DATA LOSS:
+
+1. Stop the Kafka Service on Node 101.
+
+systemctl stop kafka.service
+
+2. Delete the data directory 
+
+rm -rf /home/ashok/kafka/data-dir/*
+
+3. Then restart the Service
+
+systemctl start kafka.service
+
+4. The files under the data-dir should be automatically created.
+
+ls /home/ashok/kafka/data-dir/*
+
+5. But the leader will be different than Node 103, and the data will be skewed to other brokers / leaders
+
+6. Hence go to Kakfa Manager UI and perform the Preffered Leader Election. It will take sometime to refresh but Leader will be changed and that is expected.
+

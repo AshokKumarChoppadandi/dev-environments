@@ -1,0 +1,78 @@
+Rolling Restart of Kafka Brokers / Cluster
+
+Login to Admin machine as root user
+
+	ssh root@bigdata.cluster.adminbox
+
+1. Disable Strict Host checking in the Administration Machine
+
+	vi /root/.ssh/config
+
+	Host *
+		StrictHostKeyChecking no
+
+	chmod 0400 /root/.ssh/config
+
+2. Add Broker hostnames and ips to /etc/hosts
+
+	vi /etc/hosts
+
+	192.168.0.101   bigdata.cluster.node101
+	192.168.0.102   bigdata.cluster.node102
+	192.168.0.103   bigdata.cluster.node103
+
+3. Generate SSH key on the Administration machine
+
+	ssh-keygen
+
+	Check the generated keys under /root/.ssh directory
+
+	ls /root/.ssh
+
+	Copy public key from id_rsa.pub file under /root/.ssh directory
+
+	cat /root/.ssh/id_rsa.pub
+
+4. Add SSH public key of Admin machine to authorized_hosts file of all the Brokers
+
+	ssh root@bigdata.cluster.node101
+
+	vi /root/.ssh/authorized_keys
+
+	ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDI0bOVsO59cHQ5sXe0Zk8lNck0+/prccgsJCuSAOocHHBeI0Qqc1lV+psKNZXO48tOAIp/9SzBStXkvRoBKVG2s6/TXUdzgacb991Z6oJOhbH+nDC28EjWCyTTveMWMSK4CnQV3j2nd02/BC2kw/YTTHIWc/ipQxSTqUYg0Nxb7RXegrFFxUCpPgSA7iTDyMO2IFEMo+mVZe2J4+P2Jxedj76NgT5cWTGTrsaTblqD/wQm/mDFJE4UsRVSKA7jLwcDuBe+7LxqngjvC9Bp0vxJWMtlC0Djvm3qndY0bQqiAnVZTkvqCnkvyavjGbe53O8gFUXyIQiGZpSsGZnNWBGbSzv/AwfgvwZ3rYTXkWzu79v++Z9I/KDMWtJthtnYEeqs7/RrUM0ElTqOq1riP13+mu7VKmwIp5wfdkAAzKwNerFixp91uCLT/FyVgD27EVjN50kL31biRQQ68OmPcmZF3YEjs6cqyBRBqe0cR6a3I83wo7eNbEK05nD6tvl5Jas= root@bigdata.cluster.adminbox
+
+	chmod 0640 /root/.ssh/authorized_keys
+
+	exit
+
+5. Test the Password less login from Administration Machine
+
+	ssh root@bigdata.cluster.node101
+
+6. After password less login setup. Install Python, GCC, OpenSSl & Pip on the Admin Machine
+
+	yum install -y python gcc openssl-devel
+
+	pip install kafka-utils
+
+7. Create the configuration file under /etc/kafka_discovery
+
+	mkdir /etc/kafka_discovery
+
+	vi /etc/kafka_discovery/kafka.yaml
+
+---
+  clusters:
+    cluster-1:
+      broker_list:
+        - "bigdata.cluster.broker1:9092,bigdata.cluster.broker2:9092,bigdata.cluster.broker3:9092"
+      zookeeper: "bigdata.cluster.zookeeper1:2181,bigdata.cluster.zookeeper2:2181,bigdata.cluster.zookeeper3:2181/kafka"
+  local_config:
+    cluster: cluster-1
+
+8. Rolling Restart
+
+kafka-rolling-restart --cluster-type kafka
+
+kafka-rolling-restart --cluster-type kafka --start-command "sudo systemctl start kafka.service" --stop-command "sudo systemctl stop kafka.service" --check-count 5
+

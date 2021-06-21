@@ -1,0 +1,355 @@
+
+
+gcloud compute images create centos-8-vmx-enabled --source-image-project=centos-cloud --source-image-family=centos-8 --licenses="https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx"
+
+
+
+vi ~/.bashrc
+
+# JAVA_HOME
+export JAVA_HOME=/usr/lib/jvm/java
+PATH=$PATH:$JAVA_HOME/bin
+
+# CONFLUENT_HOME
+export CONFLUENT_HOME=/usr/local/confluent
+PATH=$PATH:$CONFLUENT_HOME/bin
+
+sudo systemctl status firewalld
+
+sudo systemctl stop firewalld
+
+sudo systemctl disable firewalld
+
+sudo vi /etc/sysctl.conf
+
+vm.swappiness=1
+
+vi /etc/security/limits.conf
+
+* hard nofile 100000
+* soft nofile 100000
+
+
+sudo tar -xzvf confluent-community-5.5.3-2.12.tar -C /usr/local/
+
+sudo ln -s /usr/local/confluent-5.5.3 /usr/local/confluent
+
+
+sudo mkdir -p /opt/confluent/data/zookeeper /opt/confluent/configs
+
+sudo cp /usr/local/confluent/etc/kafka/zookeeper.properties /opt/confluent/configs/
+
+sudo vi /opt/confluent/configs/zookeeper.properties
+
+# Time units in milliseconds used by Zookeeper for heartbeats.
+# The minimum session timeout will be twice the tickTime
+tickTime=2000
+# The number of ticks that can take for the initial synchronization
+initLimit=10
+# The number of ticks that can pass between the request and response
+syncLimit=5
+# Zookeeper servers. These are the servers defined in /etc/hosts file (DNS mocking)
+server.1=bigdata.cluster.zookeeper1:2888:3888
+server.2=bigdata.cluster.zookeeper2:2888:3888
+server.3=bigdata.cluster.zookeeper3:2888:3888
+
+
+sudo vi /opt/confluent/data/zookeeper/myid
+
+
+192.168.0.111   bigdata.cluster.admin
+192.168.0.121   bigdata.cluster.zookeeper1
+192.168.0.121   bigdata.cluster.zookeeper1
+192.168.0.122   bigdata.cluster.zookeeper2
+192.168.0.123   bigdata.cluster.zookeeper3
+192.168.0.131   bigdata.cluster.broker1
+192.168.0.132   bigdata.cluster.broker2
+192.168.0.133   bigdata.cluster.broker3
+
+
+sudo tar -xzvf confluent-community-5.5.3-2.12.tar -C /usr/local/
+
+sudo ln -s /usr/local/confluent-5.5.3/ /usr/local/confluent
+
+
+vm.swappiness=1
+
+sudo hostnamectl set-hostname bigdata.cluster.zookeeper2
+
+
+
+sudo hostnamectl set-hostname bigdata.cluster.broker1
+
+sudo rm -R /opt/confluent/configs/zookeeper.properties
+
+sudo mkdir /opt/confluent/data/kafka
+
+
+
+
+
+
+firewall
+
+swappiness
+
+limits
+
+ip addresses
+
+installation directory
+
+data directory
+
+zookeeper.properties file
+
+/etc/hosts
+
+
+
+
+
+sudo mkdir /usr/local/jmx_exporter
+
+sudo wget https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.15.0/jmx_prometheus_javaagent-0.15.0.jar
+
+sudo wget https://raw.githubusercontent.com/prometheus/jmx_exporter/master/example_configs/zookeeper.yaml
+
+sudo mv jmx_prometheus_javaagent-0.15.0.jar zookeeper.yaml /usr/local/jmx_exporter/
+
+sudo vi /etc/systemd/system/zookeeper.service
+
+[Unit]
+Description=Setup Zookeeper Service
+
+[Service]
+User=root
+Group=root
+Environment="EXTRA_ARGS=-javaagent:/usr/local/jmx_exporter/jmx_prometheus_javaagent-0.15.0.jar=8090:/usr/local/jmx_exporter/zookeeper.yaml"
+ExecStart=/usr/local/confluent/bin/zookeeper-server-start /opt/confluent/configs/zookeeper.properties
+ExecStop=/usr/local/confluent/bin/zookeeper-server-stop
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+
+sudo systemctl start zookeeper.service
+
+sudo systemctl status zookeeper.service 
+
+sudo systemctl enable zookeeper.service
+
+
+
+sudo mkdir /usr/local/jmx_exporter
+
+sudo wget https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.15.0/jmx_prometheus_javaagent-0.15.0.jar
+
+sudo wget https://raw.githubusercontent.com/prometheus/jmx_exporter/master/example_configs/kafka-2_0_0.yml
+
+sudo mv jmx_prometheus_javaagent-0.15.0.jar kafka-2_0_0.yml /usr/local/jmx_exporter/
+
+sudo vi /etc/systemd/system/kafka.service
+
+[Unit]
+Description=Setup Kafka Service
+
+[Service]
+User=root
+Group=root
+Environment="KAFKA_HEAP_OPTS=-Xmx2048M"
+Environment="KAFKA_OPTS=-javaagent:/usr/local/jmx_exporter/jmx_prometheus_javaagent-0.15.0.jar=8090:/usr/local/jmx_exporter/kafka-2_0_0.yml"
+ExecStart=/usr/local/confluent/bin/kafka-server-start /opt/confluent/configs/server.properties
+ExecStop=/usr/local/confluent/bin/kafka-server-stop
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+
+sudo systemctl start kafka.service
+
+sudo systemctl status kafka.service 
+
+sudo systemctl enable kafka.service
+
+
+----------------------------------
+
+
+Node Exporter Setup
+
+ssh centos@bigdata.cluster.zookeeper1
+ssh centos@bigdata.cluster.zookeeper2
+ssh centos@bigdata.cluster.zookeeper3
+ssh centos@bigdata.cluster.broker1
+ssh centos@bigdata.cluster.broker2
+ssh centos@bigdata.cluster.broker3
+
+
+wget https://github.com/prometheus/node_exporter/releases/download/v1.1.2/node_exporter-1.1.2.linux-amd64.tar.gz
+
+sudo tar -xzvf node_exporter-1.1.2.linux-amd64.tar.gz -C /usr/local/
+
+sudo ln -s /usr/local/node_exporter-* /usr/local/node_exporter
+
+sudo /usr/local/node_exporter/node_exporter
+
+sudo vi /etc/systemd/system/node_exporter.service
+
+[Unit]
+Description=Node Exporter Service
+
+[Service]
+User=root
+Group=root
+ExecStart=/usr/local/node_exporter/node_exporter
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+
+sudo systemctl start node_exporter.service
+
+sudo systemctl enable node_exporter.service
+
+docker-compose -f docker-compose-kafka-monitoring-tools.yml up -d
+
+localhost:3000
+
+localhost:8000
+
+bigdata.cluster.zookeeper1:2181,bigdata.cluster.zookeeper2:2181,bigdata.cluster.zookeeper3:2181
+
+localhost:9000
+
+bigdata.cluster.zookeeper1:2181,bigdata.cluster.zookeeper2:2181,bigdata.cluster.zookeeper3:2181/kafka
+
+localhost:9090
+
+localhost:9093
+
+-----------------------
+
+Jolokia Agent
+
+sudo mkdir /usr/local/jolokia
+
+wget https://repo1.maven.org/maven2/org/jolokia/jolokia-jvm/1.6.2/jolokia-jvm-1.6.2-agent.jar
+
+sudo mv jolokia-jvm-1.6.2-agent.jar /usr/local/jolokia/
+
+
+sudo vi /etc/systemd/system/zookeeper.service
+
+-javaagent:/usr/local/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
+
+sudo systemctl daemon-reload
+
+sudo systemctl restart zookeeper.service
+
+sudo journalctl -u zookeeper.service | grep jolokia
+
+sudo vi /etc/systemd/system/kafka.service
+
+[Unit]
+Description=Setup Kafka Service
+
+[Service]
+User=root
+Group=root
+Environment="KAFKA_HEAP_OPTS=-Xmx2048M"
+Environment="KAFKA_OPTS=-javaagent:/usr/local/jmx_exporter/jmx_prometheus_javaagent-0.15.0.jar=8080:/usr/local/jmx_exporter/kafka.yml -javaagent:/usr/local/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*"
+ExecStart=/usr/local/confluent/bin/kafka-server-start 
+ExecStop=/usr/local/confluent/bin/kafka-server-stop
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+
+sudo systemctl restart kafka.service
+
+sudo journalctl -u kafka.service | grep jolokia
+
+curl bigdata.cluster.zookeeper1:8778/jolokia
+
+curl bigdata.cluster.zookeeper1:8778/jolokia/read/kafka.server:type=KafkaRequestHandlerPool,name=RequestHandlerAvgIdlePercent | jq
+
+curl bigdata.cluster.zookeeper1:8778/jolokia/read/kafka.server:name=UnderReplicatedPartitions,type=ReplicaManager/Value | jq
+
+----------------------
+
+
+Rolling Restart Yelp Tools
+
+ssh centos@bigdata.cluster.admin1
+
+ssh-keygen
+
+ssh-keygen -p -m PEM -f ~/.ssh/id_rsa
+
+vi ~/.ssh/config
+
+Host *
+  StrictHostKeyChecking no
+
+chmod 0400 ~/.ssh/config
+
+cat ~/.ssh/id_rsa.pub   # Copy the Admin Machine public key
+
+vi /etc/hosts
+
+192.168.0.111	bigdata.cluster.admin1
+192.168.0.112	bigdata.cluster.admin2
+192.168.0.121	bigdata.cluster.zookeeper1
+192.168.0.122	bigdata.cluster.zookeeper2
+192.168.0.123	bigdata.cluster.zookeeper3
+192.168.0.131	bigdata.cluster.broker1
+192.168.0.132	bigdata.cluster.broker2
+192.168.0.133	bigdata.cluster.broker3
+
+Add the Admin Machine Public key to authorized_keys file in all the nodes
+
+ssh-copy-id -i ~/.ssh/id_rsa.pub centos@bigdata.cluster.zookeeper1
+ssh-copy-id -i ~/.ssh/id_rsa.pub centos@bigdata.cluster.zookeeper2
+ssh-copy-id -i ~/.ssh/id_rsa.pub centos@bigdata.cluster.zookeeper3
+ssh-copy-id -i ~/.ssh/id_rsa.pub centos@bigdata.cluster.broker1
+ssh-copy-id -i ~/.ssh/id_rsa.pub centos@bigdata.cluster.broker2
+ssh-copy-id -i ~/.ssh/id_rsa.pub centos@bigdata.cluster.broker3
+
+
+# Install Python and Dependecies
+
+yum install -y python2 gcc openssl-devel
+
+# Create a soft link for Python and PIP
+
+sudo ln -s /usr/bin/python2 /usr/bin/python
+
+sudo ln -s /usr/bin/pip2 /usr/bin/pip
+
+# Install Kafka Utils using PIP
+
+pip install kafka-utils
+
+# Creating config directory and create config file
+
+sudo mkdir /etc/kafka_discovery
+
+sudo vi /etc/kafka_discovery/kafka.yaml
+
+---
+  clusters:
+    cluster-1:
+      broker_list:
+        - "bigdata.cluster.broker1:9092,bigdata.cluster.broker2:9092,bigdata.cluster.broker3:9092"
+      zookeeper: "bigdata.cluster.zookeeper1:2181,bigdata.cluster.zookeeper2:2181,bigdata.cluster.zookeeper3:2181/kafka"
+  local_config:
+    cluster: cluster-1

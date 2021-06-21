@@ -1,0 +1,77 @@
+1. SSH to the machine as ROOT / Sudo user.
+
+	ssh root@<IP Address of the machine>
+
+2. Update the Machine
+
+	dnf update -y
+
+3. Install Virtual Box dependencies:
+
+	dnf install patch gcc kernel-headers kernel-devel make perl wget elfutils-libelf-devel -y
+
+4. Reboot the system
+
+	reboot
+
+5. Add / Download the Oracle Virtual Box repo on CentOS 8 machine
+
+	i. Create a file in /etc/yum.repos.d directory like below
+
+		vi /etc/yum.repos.d/virtualbox.repo
+
+	ii. Then add the below content to the file: (https://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo)
+
+		[virtualbox]
+		name=Oracle Linux / RHEL / CentOS-$releasever / $basearch - VirtualBox
+		baseurl=http://download.virtualbox.org/virtualbox/rpm/el/$releasever/$basearch
+		enabled=1
+		gpgcheck=1
+		repo_gpgcheck=1
+		gpgkey=https://www.virtualbox.org/download/oracle_vbox.asc
+
+	iii. Save the file.
+
+	( OR ) 
+
+	As an alternate just run the below command which downloads the file from VirtualBox download repo page and save it in /etc/yum.repos.d
+
+	wget https://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo -P /etc/yum.repos.d/	
+
+6. Install Oracle Virtual Box
+
+	dnf install VirtualBox-6.1 -y
+
+7. Check the Status
+
+	systemctl status vboxdrv.service
+
+8. If the service not started execute
+
+	/sbin/vboxconfig
+
+9. Check the status
+	
+	systemctl status vboxdrv.service
+
+10. Start the service at boot time (if not already done by default)
+
+	systemctl enable vboxdrv.service
+
+11. Download the Oracle VM VirtualBox extension pack
+
+	wget https://download.virtualbox.org/virtualbox/6.1.22/Oracle_VM_VirtualBox_Extension_Pack-6.1.22.vbox-extpack
+
+12. Import extension pack
+
+	vboxmanage	extpack install /home/ashok/Downloads/Oracle_VM_VirtualBox_Extension_Pack-6.1.22.vbox-extpack
+
+11. To uninstall / remove VirtualBox
+
+	dnf remove VirtualBox-6.1 -y
+
+
+
+
+
+ifconfig <network_name> | grep "inet addr" | aws '{print $2}'

@@ -1,0 +1,74 @@
+Set the path of Virtual Machines
+
+vboxmanage setproperty machinefolder ~/VirtualBox\ VMs/
+
+Create a VM and Register it
+
+vboxmanage createvm --name "vm1" --register
+
+Create a vDisk (Virtual Disk for the VM). This file is used by VM as Virtual Disk
+
+vboxmanage createvdi --filename ~/vm1/vm1-vdisk01.vdi --size 20000 --format VDI
+
+(Save the UUID generated for VDI)
+
+List OS Types which are supported by VirtualBox
+
+vboxmanage list ostypes
+
+Select the required version, for this example I'm select Redhat_64 (CentOS 8)
+Configure the Compute, Networking & Operating system support
+
+vboxmanage modifyvm "vm1" --cpus 2 --memory 4096 --acpi on --boot1 dvd --nic1 bridged --bridgeadapter1 eno1 --cableconnected1 on --ostype RedHat_64
+
+Create Storage IDE controller and attach to the VM
+
+vboxmanage storagectl "vm1" --name "SATA Controller" --add sata
+
+Attach the vDisk and the ISO image for the Operating System Installation
+
+vboxmanage storageattach "vm1" --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium ~/VirtualBox\ VMs/vm1/vm1-vdisk01.vdi
+
+vboxmanage storageattach "vm1" --storagectl "SATA Controller" --port 1 --device 0 --type dvddrive --medium ~/Downloads/CentOS-8.3.2011-x86_64-dvd1.iso
+
+vboxmanage modifyvm "vm1" --boot1 dvd --boot2 disk --boot3 none --boot4 none
+
+#Enable RDP
+vboxmanage modifyvm vm1 --vrde on
+vboxmanage modifyvm vm1 --vrdemulticon on --vrdeport 10001
+
+#Start the VM
+vboxheadless --startvm vm1 &
+
+
+Connect to VM using Remote Desktop Client
+
+If you are using CentOS 8, by default you'll get Remote Desktop Client.
+
+	Use IP address of HostName and connect
+
+	You can change the Screen Height & Width
+
+Start VirtualBox VM from the commandline
+
+vboxmanage start "vm1" --type gui &
+
+To display the information about the Machine
+
+vboxmanage showvminfo "vm1"
+
+To take snapshot of VM
+
+vboxmanage snapshot "vm1" take <snapshot_name>
+
+Revert back to a particular Snapshot
+
+vboxmanage snapshot "vm1" revert <snapshot_name>
+
+Poweroff the VM
+
+vboxmanage controlvm "vm1" poweroff
+
+Delete the VM
+
+vboxmanage unregistervm "vm1" --delete

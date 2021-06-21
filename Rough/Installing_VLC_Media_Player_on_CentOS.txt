@@ -1,0 +1,27 @@
+Installing VLC Media Player on CentOS 8
+
+1. Login as Root user
+
+	su
+
+2. Update all packages
+
+	yum update -y
+
+3. Install and enable EPEL Repo
+
+	dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
+
+4. Install and Enable RPM Fusion Repository
+
+	dnf install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm -y
+
+5. Download and Install VLC Media Player
+
+	dnf install vlc -y
+
+6. Logout from Root user and check VLC player version
+
+	exit
+
+	vlc --version

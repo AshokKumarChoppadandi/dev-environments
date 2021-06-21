@@ -1,0 +1,66 @@
+#!/bin/sh
+#set -e
+
+
+export BROKER_ID=101
+export KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker1:9092
+export KAFKA_DATA_DIRS=$CONFIG_DIR/data/kafka
+export DEFAULT_KAFKA_TOPIC_PARTITIONS=6
+export DELETE_TOPIC_ENABLE=true
+export ZOOKEEPERS_LIST=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/kafka
+export SERVICE_TYPE=kafka
+
+
+
+
+echo "Starting $SERVICE_TYPE service ON $HOSTNAME"
+
+JMX_EXPORTER_DIR=$CONFIG_DIR/jmx_exporter
+
+case "$SERVICE_TYPE" in
+  "zookeeper" ) PROPERTIES_FILE=$CONFIG_DIR/config/zookeeper.properties
+  	ZOOKEEPER_DATA_DIR_TMP=$(echo $ZOOKEEPER_DATA_DIR | sed -e "s/\//\\\\\//g")
+  	ZOOKEEPER_SERVERS_TMP=$(echo $ZOOKEEPER_SERVERS | sed -e "s/,/\n/g")
+
+    sed -i -e "s/ZOOKEEPER_HOST/$ZOOKEEPER_HOST/" $PROPERTIES_FILE
+    sed -i -e "s/ZOOKEEPER_CLIENT_PORT/$ZOOKEEPER_CLIENT_PORT/" $PROPERTIES_FILE
+    sed -i -e "s/ZOOKEEPER_DATA_DIR/$ZOOKEEPER_DATA_DIR_TMP/" $PROPERTIES_FILE
+    sed -i -e "s/ZOOKEEPER_TICK_TIME/$ZOOKEEPER_TICK_TIME/" $PROPERTIES_FILE
+    sed -i -e "s/INITIAL_LIMIT_TICKS/$INITIAL_LIMIT_TICKS/" $PROPERTIES_FILE
+    sed -i -e "s/SYNC_LIMIT_TICKS/$SYNC_LIMIT_TICKS/" $PROPERTIES_FILE
+    sed -i -e "s/ZOOKEEPER_SERVERS//" $PROPERTIES_FILE
+
+    for i in $ZOOKEEPER_SERVERS_TMP; do
+    	echo $i >> $PROPERTIES_FILE
+    done
+    
+    mkdir $ZOOKEEPER_DATA_DIR
+
+    echo $ZOOKEEPER_ID > $ZOOKEEPER_DATA_DIR/myid
+    export EXTRA_ARGS="-javaagent:$JMX_EXPORTER_DIR/jmx_prometheus_javaagent.jar=${JMX_EXPORTER_PORT}:${JMX_EXPORTER_DIR}/zookeeper.yaml"
+    $CONFLUENT_HOME/bin/zookeeper-server-start $PROPERTIES_FILE 
+
+  ;;
+
+  "kafka" ) PROPERTIES_FILE=$CONFIG_DIR/config/server.properties
+  	KAFKA_LISTENERS_TMP=$(echo $KAFKA_LISTENERS | sed -e "s/\//\\\\\//g")
+  	KAFKA_ADVERTISED_LISTENERS_TMP=$(echo $KAFKA_ADVERTISED_LISTENERS | sed -e "s/\//\\\\\//g")
+  	KAFKA_DATA_DIRS_TMP=$(echo $KAFKA_DATA_DIRS | sed -e "s/\//\\\\\//g")
+
+    sed -i -e "s/BROKER_ID/$BROKER_ID/" $PROPERTIES_FILE
+    sed -i -e "s/KAFKA_LISTENERS/$KAFKA_LISTENERS_TMP/" $PROPERTIES_FILE
+    sed -i -e "s/KAFKA_ADVERTISED_LISTENERS/$KAFKA_ADVERTISED_LISTENERS_TMP/" $PROPERTIES_FILE
+    sed -i -e "s/KAFKA_DATA_DIRS/$KAFKA_DATA_DIRS/" $PROPERTIES_FILE
+    sed -i -e "s/DEFAULT_KAFKA_TOPIC_PARTITIONS/$DEFAULT_KAFKA_TOPIC_PARTITIONS/" $PROPERTIES_FILE
+    sed -i -e "s/DELETE_TOPIC_ENABLE/$DELETE_TOPIC_ENABLE/" $PROPERTIES_FILE
+    sed -i -e "s/ZOOKEEPERS_LIST/$ZOOKEEPERS_LIST/" $PROPERTIES_FILE
+    
+    mkdir $KAFKA_DATA_DIRS
+
+    $CONFLUENT_HOME/bin/kafka-server-start $PROPERTIES_FILE 
+
+  ;;
+  * ) echo "Nothing matched"
+  ;;
+esac
