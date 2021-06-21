@@ -10,7 +10,7 @@ usage() {
 
 
 # DEFINING A FUNCTION TO CREATE VIRTUAL MACHINES
-createvm() {
+create_vm() {
 
 	VM_NAME_PREFIX=$1
 	RDP_PORT_PREFIX=$2
@@ -20,13 +20,13 @@ createvm() {
 	DISK_SIZE=$6
 
 	# ISO IMAGE LOCATION
-	ISO_PATH="$(echo $HOME)/Downloads/CentOS-8.3.2011-x86_64-dvd1.iso"
+	ISO_PATH="$HOME/Downloads/CentOS-8.3.2011-x86_64-dvd1.iso"
 	
 	# SETTING UP THE VIRTUAL MACHINES HOME DIRECTORY
 	vboxmanage setproperty machinefolder "$VIRTUAL_MACHINES_STORE"
 	
 	# FOR LOOP TO ITERATE
-	for (( i = 1; i <= $NUM_OF_VMS; i++ )); do
+	for (( i = 1; i <= NUM_OF_VMS; i++ )); do
 		VM_NAME=${VM_NAME_PREFIX}_${i}
 		RDP_PORT=${RDP_PORT_PREFIX}${i}
 		echo "CREATING VM WITH NAME - ${VM_NAME} WITH BELOW CONFIGURATION..."
@@ -84,8 +84,7 @@ createvm() {
 echo "Starting execution..."
 
 # VIRTUAL MACHINES HOME DIRECTORY PATH
-VIRTUAL_MACHINES_STORE="$(echo $HOME)/VirtualBox\ VMs/"
-
+VIRTUAL_MACHINES_STORE="$HOME/VirtualBox\ VMs/"
 
 # VIRTUAL MACHINE NAME 
 VM_NAME_PREFIX=""
@@ -133,10 +132,9 @@ while getopts ":n:p:t:c:m:d:" opt; do
 done
 shift $((OPTIND-1))
 
-
-# Checking for Manadatory Arguments
+# Checking for Mandatory Arguments
 if [[ -z "${VM_NAME_PREFIX}" || -z "${RDP_PORT_PREFIX}" || -z "${TOTAL_NUM_OF_VMS}" ]]; then
 	usage
 else
-	createvm $VM_NAME_PREFIX $RDP_PORT_PREFIX $TOTAL_NUM_OF_VMS $NUM_VCPUS $MEMORY_SIZE $DISK_SIZE
+	create_vm "$VM_NAME_PREFIX" "$RDP_PORT_PREFIX" "$TOTAL_NUM_OF_VMS" "$NUM_VCPUS" "$MEMORY_SIZE" "$DISK_SIZE"
 fi
