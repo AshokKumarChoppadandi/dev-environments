@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>DockerImages</artifactId>
+        <groupId>com.bigdata.docker</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>ConfluentKafka</artifactId>
+    <version>5.5.3</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>confluent-kafka-docker-host</docker.container.hostname>
+        <docker.container.name>confluent-kafka-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>confluent-kafka-docker-network</docker.network.name>
+        <docker.container.port.mapping>9092:9092,2181:2181,8083:8083,8088:8088,8081:8081</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>confluent-kafka</docker.image.name>
+
+        <confluent.kafka.download.url>https://packages.confluent.io/archive/5.5/confluent-community-5.5.3-2.12.tar.gz?_ga=2.198249062.812666055.1638263298-1897962138.1637336693</confluent.kafka.download.url>
+        <confluent.home.dir>/usr/local/confluent</confluent.home.dir>
+
+        <!-- Zookeeper Properties-->
+        <zookeeper.data.dir>\/tmp\/zookeeper</zookeeper.data.dir>
+        <zookeeper.client.port>2181</zookeeper.client.port>
+        <zookeeper.max.client.connections>0</zookeeper.max.client.connections>
+        <zookeeper.enable.server>false</zookeeper.enable.server>
+        <zookeeper.admin.server.port>8080</zookeeper.admin.server.port>
+
+        <!-- Kafka Broker Properties-->
+        <broker.id>0</broker.id>
+        <broker.host>0.0.0.0</broker.host>
+        <broker.port>9092</broker.port>
+        <advertised.listeners.host>localhost</advertised.listeners.host>
+        <advertised.listeners.port>9092</advertised.listeners.port>
+        <num.network.threads>3</num.network.threads>
+        <num.io.threads>8</num.io.threads>
+        <socket.send.buffer.bytes>102400</socket.send.buffer.bytes>
+        <socket.receive.buffer.bytes>102400</socket.receive.buffer.bytes>
+        <socket.request.max.bytes>104857600</socket.request.max.bytes>
+        <log.dirs>\/tmp\/kafka-logs</log.dirs>
+        <default.partitions>1</default.partitions>
+        <num.recovery.threads.per.data.dir>1</num.recovery.threads.per.data.dir>
+        <offsets.topic.replication.factor>1</offsets.topic.replication.factor>
+        <transaction.state.log.replication.factor>1</transaction.state.log.replication.factor>
+        <transaction.state.log.min.isr>1</transaction.state.log.min.isr>
+        <log.retention.hours>168</log.retention.hours>
+        <log.segment.bytes>1073741824</log.segment.bytes>
+        <log.retention.check.interval.ms>300000</log.retention.check.interval.ms>
+        <zookeeper.connect.list>localhost:2181</zookeeper.connect.list>
+        <zookeeper.connection.timeout.ms>18000</zookeeper.connection.timeout.ms>
+        <group.initial.rebalance.delay.ms>0</group.initial.rebalance.delay.ms>
+
+        <!-- Kafka Connect Properties-->
+        <bootstrap.servers>localhost:9092</bootstrap.servers>
+        <group.id>connect-cluster</group.id>
+        <key.converter>org.apache.kafka.connect.json.JsonConverter</key.converter>
+        <value.converter>org.apache.kafka.connect.json.JsonConverter</value.converter>
+        <key.converter.schemas.enable>true</key.converter.schemas.enable>
+        <value.converter.schemas.enable>true</value.converter.schemas.enable>
+        <offset.storage.topic>connect-offsets</offset.storage.topic>
+        <offset.storage.replication.factor>1</offset.storage.replication.factor>
+        <offset.storage.partitions>25</offset.storage.partitions>
+        <config.storage.topic>connect-configs</config.storage.topic>
+        <config.storage.replication.factor>1</config.storage.replication.factor>
+        <status.storage.topic>connect-status</status.storage.topic>
+        <status.storage.replication.factor>1</status.storage.replication.factor>
+        <status.storage.partitions>5</status.storage.partitions>
+        <offset.flush.interval.ms>10000</offset.flush.interval.ms>
+        <connect.host>0.0.0.0</connect.host>
+        <connect.port>8083</connect.port>
+        <connect.rest.advertised.host>localhost</connect.rest.advertised.host>
+        <connect.rest.advertised.port>8083</connect.rest.advertised.port>
+        <plugin.path>\/usr\/local\/kafka\/libs</plugin.path>
+
+        <startup.service>sh</startup.service>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!--<dockerHost>unix:///var/run/docker.sock</dockerHost>-->
+
+                    <!-- For Windows Environment-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args>
+                                    <APACHE_KAFKA_DOWNLOAD_URL>${confluent.kafka.download.url}</APACHE_KAFKA_DOWNLOAD_URL>
+                                </args>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <KAFKA_HOME>${confluent.home.dir}</KAFKA_HOME>
+                                    <ZOOKEEPER_DATA_DIR>${zookeeper.data.dir}</ZOOKEEPER_DATA_DIR>
+                                    <ZOOKEEPER_CLIENT_PORT>${zookeeper.client.port}</ZOOKEEPER_CLIENT_PORT>
+                                    <ZOOKEEPER_MAX_CLIENT_CONNECTIONS>${zookeeper.max.client.connections}</ZOOKEEPER_MAX_CLIENT_CONNECTIONS>
+                                    <ZOOKEEPER_ENABLE_SERVER>${zookeeper.enable.server}</ZOOKEEPER_ENABLE_SERVER>
+                                    <ZOOKEEPER_ADMIN_SERVER_PORT>${zookeeper.admin.server.port}</ZOOKEEPER_ADMIN_SERVER_PORT>
+                                    <BROKER_ID>${broker.id}</BROKER_ID>
+                                    <BROKER_HOST>${broker.host}</BROKER_HOST>
+                                    <BROKER_PORT>${broker.port}</BROKER_PORT>
+                                    <ADVERTISED_LISTENERS_HOST>${advertised.listeners.host}</ADVERTISED_LISTENERS_HOST>
+                                    <ADVERTISED_LISTENERS_PORT>${advertised.listeners.port}</ADVERTISED_LISTENERS_PORT>
+                                    <NUM_NETWORK_THREADS>${num.network.threads}</NUM_NETWORK_THREADS>
+                                    <NUM_IO_THREADS>${num.io.threads}</NUM_IO_THREADS>
+                                    <SOCKET_SEND_BUFFER_BYTES>${socket.send.buffer.bytes}</SOCKET_SEND_BUFFER_BYTES>
+                                    <SOCKET_RECEIVE_BUFFER_BYTES>${socket.receive.buffer.bytes}</SOCKET_RECEIVE_BUFFER_BYTES>
+                                    <SOCKET_REQUEST_MAX_BYTES>${socket.request.max.bytes}</SOCKET_REQUEST_MAX_BYTES>
+                                    <LOG_DIRS>${log.dirs}</LOG_DIRS>
+                                    <DEFAULT_PARTITIONS>${default.partitions}</DEFAULT_PARTITIONS>
+                                    <NUM_RECOVERY_THREADS_PER_DATA_DIR>${num.recovery.threads.per.data.dir}</NUM_RECOVERY_THREADS_PER_DATA_DIR>
+                                    <OFFSETS_TOPIC_REPLICATION_FACTOR>${offsets.topic.replication.factor}</OFFSETS_TOPIC_REPLICATION_FACTOR>
+                                    <TRANSACTION_STATE_LOG_REPLICATION_FACTOR>${transaction.state.log.replication.factor}</TRANSACTION_STATE_LOG_REPLICATION_FACTOR>
+                                    <TRANSACTION_STATE_LOG_MIN_ISR>${transaction.state.log.min.isr}</TRANSACTION_STATE_LOG_MIN_ISR>
+                                    <LOG_RETENTION_HOURS>${log.retention.hours}</LOG_RETENTION_HOURS>
+                                    <LOG_SEGMENT_BYTES>${log.segment.bytes}</LOG_SEGMENT_BYTES>
+                                    <LOG_RETENTION_CHECK_INTERVAL_MS>${log.retention.check.interval.ms}</LOG_RETENTION_CHECK_INTERVAL_MS>
+                                    <ZOOKEEPER_CONNECT_LIST>${zookeeper.connect.list}</ZOOKEEPER_CONNECT_LIST>
+                                    <ZOOKEEPER_CONNECTION_TIMEOUT_MS>${zookeeper.connection.timeout.ms}</ZOOKEEPER_CONNECTION_TIMEOUT_MS>
+                                    <GROUP_INITIAL_REBALANCE_DELAY_MS>${group.initial.rebalance.delay.ms}</GROUP_INITIAL_REBALANCE_DELAY_MS>
+                                    <BOOTSTRAP_SERVERS>${bootstrap.servers}</BOOTSTRAP_SERVERS>
+                                    <GROUP_ID>${group.id}</GROUP_ID>
+                                    <KEY_CONVERTER>${key.converter}</KEY_CONVERTER>
+                                    <VALUE_CONVERTER>${value.converter}</VALUE_CONVERTER>
+                                    <KEY_CONVERTER_SCHEMAS_ENABLE>${key.converter.schemas.enable}</KEY_CONVERTER_SCHEMAS_ENABLE>
+                                    <VALUE_CONVERTER_SCHEMAS_ENABLE>${value.converter.schemas.enable}</VALUE_CONVERTER_SCHEMAS_ENABLE>
+                                    <OFFSET_STORAGE_TOPIC>${offset.storage.topic}</OFFSET_STORAGE_TOPIC>
+                                    <OFFSET_STORAGE_REPLICATION_FACTOR>${offset.storage.replication.factor}</OFFSET_STORAGE_REPLICATION_FACTOR>
+                                    <OFFSET_STORAGE_PARTITIONS>${offset.storage.partitions}</OFFSET_STORAGE_PARTITIONS>
+                                    <CONFIG_STORAGE_TOPIC>${config.storage.topic}</CONFIG_STORAGE_TOPIC>
+                                    <CONFIG_STORAGE_REPLICATION_FACTOR>${config.storage.replication.factor}</CONFIG_STORAGE_REPLICATION_FACTOR>
+                                    <STATUS_STORAGE_TOPIC>${status.storage.topic}</STATUS_STORAGE_TOPIC>
+                                    <STATUS_STORAGE_REPLICATION_FACTOR>${status.storage.replication.factor}</STATUS_STORAGE_REPLICATION_FACTOR>
+                                    <STATUS_STORAGE_PARTITIONS>${status.storage.partitions}</STATUS_STORAGE_PARTITIONS>
+                                    <OFFSET_FLUSH_INTERVAL_MS>${offset.flush.interval.ms}</OFFSET_FLUSH_INTERVAL_MS>
+                                    <CONNECT_HOST>${connect.host}</CONNECT_HOST>
+                                    <CONNECT_PORT>${connect.port}</CONNECT_PORT>
+                                    <CONNECT_REST_ADVERTISED_HOST>${connect.rest.advertised.host}</CONNECT_REST_ADVERTISED_HOST>
+                                    <CONNECT_REST_ADVERTISED_PORT>${connect.rest.advertised.port}</CONNECT_REST_ADVERTISED_PORT>
+                                    <PLUGIN_PATH>${plugin.path}</PLUGIN_PATH>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                                <cmd>${startup.service}</cmd>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

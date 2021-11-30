@@ -11,6 +11,7 @@
     <modules>
         <module>CoreHadoop</module>
         <module>ApacheKafka</module>
+        <module>ConfluentKafka</module>
     </modules>
 
     <properties>
