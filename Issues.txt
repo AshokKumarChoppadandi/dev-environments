@@ -1,0 +1,1 @@
+1. Move Docker Hub - Username, Password & Repository Name to Maven Settings.xml
