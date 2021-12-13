@@ -1,0 +1,86 @@
+version: '3'
+
+networks:
+  hadoop_cluster:
+    driver: bridge
+
+services:
+  namenode:
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    networks:
+      - hadoop_cluster
+    ports:
+      - "50070:50070"
+    hostname: namenode
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+    command: namenode
+
+  secondarynamenode:
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+    ports:
+      - "50030:50030"
+    hostname: secondarynamenode
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+    command: secondarynamenode
+
+  resourcemanager:
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+    ports:
+      - "8088:8088"
+    hostname: resourcemanager
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+    command: resourcemanager
+
+  historyserver:
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+    ports:
+      - "19888:19888"
+    hostname: historyserver
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+    command: historyserver
+
+  slavenode:
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+    ports:
+      - "18042:18042"
+      - "35945:35945"
+    hostname: slavenode
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+    command: slavenode
