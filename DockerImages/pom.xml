@@ -12,6 +12,8 @@
         <module>CoreHadoop</module>
         <module>ApacheKafka</module>
         <module>ConfluentKafka</module>
+        <module>MySQLMetastore</module>
+        <module>HadoopHive</module>
     </modules>
 
     <properties>

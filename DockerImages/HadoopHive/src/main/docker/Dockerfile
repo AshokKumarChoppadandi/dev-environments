@@ -12,10 +12,14 @@ WORKDIR /home/hadoop
 LABEL maintainer="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" description="CentOS with Java, Hadoop and Spark installation"
 
 ENV HADOOP_DOWNLOAD_URL https://archive.apache.org/dist/hadoop/common/hadoop-2.7.6/hadoop-2.7.6.tar.gz
+ENV HIVE_DOWNLOAD_URL https://dlcdn.apache.org/hive/hive-2.3.9/apache-hive-2.3.9-bin.tar.gz
+ENV MYSQL_CONNECTOR_JAR https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.23/mysql-connector-java-8.0.23.jar
 
 ENV JAVA_HOME /usr/lib/jvm/java
 ENV HADOOP_HOME /usr/local/hadoop
-ENV HADOOP_CONF_DIR /usr/local/hadoop/etc/hadoop
+ENV HADOOP_CONF_DIR $HADOOP_HOME/etc/hadoop
+ENV HIVE_HOME /usr/local/apache-hive
+ENV HIVE_CONF_DIR $HIVE_HOME/conf
 
 RUN yum clean all \
     && rpm --rebuilddb \
@@ -30,22 +34,32 @@ RUN yum clean all \
     && chown -R hadoop /home/hadoop/.ssh \
     && wget $HADOOP_DOWNLOAD_URL \
     && tar -xzvf hadoop-*.tar.gz -C /usr/local/ \
-    && ln -s /usr/local/hadoop-* $HADOOP_HOME \
+    && ln -s /usr/local/hadoop-* /usr/local/hadoop \
     && rm -rf /home/hadoop/hadoop*.tar.gz
 
-ENV PATH $PATH:$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+RUN mkdir -p $HADOOP_HOME/data/nameNode $HADOOP_HOME/data/dataNode $HADOOP_HOME/data/namesecondary $HADOOP_HOME/data/tmp $HADOOP_HOME/spark \
+#     && chown -R hadoop /usr/local/hadoop/data/nameNode /usr/local/hadoop/data/dataNode /usr/local/hadoop/data/namesecondary /usr/local/hadoop/data/tmp /usr/local/hadoop/spark \
+    # && echo $JAVA_HOME >> $HADOOP_CONF_DIR/hadoop-env.sh \
+    && echo HDFS_NAMENODE_USER=hadoop >> $HADOOP_CONF_DIR/hadoop-env.sh \
+    && echo HDFS_DATANODE_USER=hadoop >> $HADOOP_CONF_DIR/hadoop-env.sh \
+    && echo HDFS_SECONDARYNAMENODE_USER=hadoop >> $HADOOP_CONF_DIR/hadoop-env.sh \
+#     && chown -R hadoop /home/hadoop/ \
+    && chown -R hadoop $HADOOP_HOME*
+
+RUN wget $HIVE_DOWNLOAD_URL --no-check-certificate \
+    && tar -xzvf apache-hive-*.tar.gz -C /usr/local  \
+    && rm -rf /home/hadoop/apache-hive-*.tar.gz \
+    && ln -s /usr/local/apache-hive-* $HIVE_HOME \
+    && wget $MYSQL_CONNECTOR_JAR \
+    && mv /home/hadoop/mysql-connector*.jar $HIVE_HOME/lib \
+    && chown -R hadoop /home/hadoop/ \
+    && chown -R hadoop $HIVE_HOME*
+
+ENV PATH $PATH:$JAVA_HOME/bin:/usr/local/hadoop/bin:/usr/local/hadoop/sbin:$HIVE_HOME/bin
 
 ADD configs/ssh-config /home/hadoop/.ssh/config
-
-COPY configs/* $HADOOP_HOME/etc/hadoop/
-RUN mkdir -p $HADOOP_HOME/data/nameNode $HADOOP_HOME/data/dataNode $HADOOP_HOME/data/namesecondary $HADOOP_HOME/data/tmp $HADOOP_HOME/spark \
-    # && chown -R hadoop /usr/local/hadoop/data/nameNode /usr/local/hadoop/data/dataNode /usr/local/hadoop/data/namesecondary /usr/local/hadoop/data/tmp /usr/local/hadoop/spark \
-    # && echo $JAVA_HOME >> /usr/local/hadoop/etc/hadoop/hadoop-env.sh \
-    && echo "export HDFS_NAMENODE_USER=hadoop" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh \
-    && echo "export HDFS_DATANODE_USER=hadoop" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh \
-    && echo "export HDFS_SECONDARYNAMENODE_USER=hadoop" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh \
-    && chown -R hadoop /home/hadoop/ \
-    && chown -R hadoop $HADOOP_HOME*
+COPY configs/hadoop/* $HADOOP_CONF_DIR/
+COPY configs/hive/hive-site.xml $HIVE_CONF_DIR/
 
 # NAMENODE PROPERTIES
 ENV HADOOP_TMP_DIR "\/usr\/local\/hadoop\/data\/tmp"
@@ -77,11 +91,23 @@ ENV YARN_APP_MAPREDUCE_AM_COMMAND_OPTS "-Xmx2048m"
 ENV MAPREDUCE_MAP_CPU_VCORES 1
 ENV MAPREDUCE_REDUCE_CPU_VCORES 1
 
-COPY apache-hadoop-docker-entrypoint.sh /home/hadoop/
-RUN chmod +x /home/hadoop/apache-hadoop-docker-entrypoint.sh \
+# HIVE PROPERTIES
+ENV JAVAX_JDO_OPTION_CONNECTIONURL "jdbc:mysql:\/\/localhost\/metastore?createDatabaseIfNotExist=true"
+ENV JAVAX_JDO_OPTION_CONNECTIONDRIVERNAME com.mysql.cj.jdbc.Driver
+ENV JAVAX_JDO_OPTION_CONNECTIONUSERNAME hive
+ENV JAVAX_JDO_OPTION_CONNECTIONPASSWORD hive
+ENV HIVE_SERVER2_TRANSPORT_MODE binary
+ENV HIVE_SERVER2_THRIFT_HTTP_PORT 10001
+ENV HIVE_SERVER2_THRIFT_HTTP_MAX_WORKER_THREADS 500
+ENV HIVE_SERVER2_THRIFT_HTTP_MIN_WORKER_THREADS 5
+ENV HIVE_SERVER2_THRIFT_HTTP_PATH cliservice
+ENV HIVE_SERVER2_ENABLE_DOAS false
+
+COPY apache-hadoop-hive-docker-entrypoint.sh /home/hadoop/
+RUN chmod +x /home/hadoop/apache-hadoop-hive-docker-entrypoint.sh \
     && chown -R hadoop /home/hadoop/
 
 USER hadoop
 
-ENTRYPOINT ["./apache-hadoop-docker-entrypoint.sh"]
+ENTRYPOINT ["./apache-hadoop-hive-docker-entrypoint.sh"]
 CMD ["sh"]
