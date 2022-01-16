@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>DockerImages</artifactId>
+        <groupId>com.bigdata.docker</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>ApacheZookeeper</artifactId>
+    <version>3.6.3</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>apache-zookeeper-docker-host</docker.container.hostname>
+        <docker.container.name>apache-zookeeper-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>apache-zookeeper-docker-network</docker.network.name>
+        <docker.container.port.mapping>2181:2181</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>apache-zookeeper</docker.image.name>
+        <startup.service>sh</startup.service>
+
+        <apache.zookeeper.download.url>https://dlcdn.apache.org/zookeeper/zookeeper-3.6.3/apache-zookeeper-3.6.3-bin.tar.gz</apache.zookeeper.download.url>
+        <zookeeper.home>/usr/local/zookeeper</zookeeper.home>
+        <zookeeper.config.dir>/usr/local/zookeeper/</zookeeper.config.dir>
+        <!-- Zookeeper Properties-->
+        <zookeeper.data.dir>\/tmp\/zookeeper</zookeeper.data.dir>
+        <zookeeper.client.port>2181</zookeeper.client.port>
+        <zookeeper.max.client.connections>0</zookeeper.max.client.connections>
+        <zookeeper.enable.server>false</zookeeper.enable.server>
+        <zookeeper.admin.server.port>8080</zookeeper.admin.server.port>
+        <zookeeper.tick.time>2000</zookeeper.tick.time>
+        <zookeeper.initial.limit>2000</zookeeper.initial.limit>
+        <zookeeper.sync.limit>2000</zookeeper.sync.limit>
+        <zookeeper.id>1</zookeeper.id>
+        <zookeeper.quorum>localhost:2181,localhost:2182,localhost:2183</zookeeper.quorum>
+
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!-- <dockerHost>unix:///var/run/docker.sock</dockerHost> -->
+
+                    <!-- For Windows Environment-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args>
+                                    <APACHE_ZOOKEEPER_DOWNLOAD_URL>${apache.zookeeper.download.url}</APACHE_ZOOKEEPER_DOWNLOAD_URL>
+                                </args>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <ZOOKEEPER_HOME>${zookeeper.home}</ZOOKEEPER_HOME>
+                                    <ZOOKEEPER_CONFIG_DIR>${zookeeper.config.dir}</ZOOKEEPER_CONFIG_DIR>
+                                    <ZOOKEEPER_DATA_DIR>${zookeeper.data.dir}</ZOOKEEPER_DATA_DIR>
+                                    <ZOOKEEPER_CLIENT_PORT>${zookeeper.client.port}</ZOOKEEPER_CLIENT_PORT>
+                                    <ZOOKEEPER_MAX_CLIENT_CONNECTIONS>${zookeeper.max.client.connections}</ZOOKEEPER_MAX_CLIENT_CONNECTIONS>
+                                    <ZOOKEEPER_ENABLE_SERVER>${zookeeper.enable.server}</ZOOKEEPER_ENABLE_SERVER>
+                                    <ZOOKEEPER_ADMIN_SERVER_PORT>${zookeeper.admin.server.port}</ZOOKEEPER_ADMIN_SERVER_PORT>
+                                    <ZOOKEEPER.TICK.TIME>${zookeeper.tick.time}</ZOOKEEPER.TICK.TIME>
+                                    <ZOOKEEPER.INITIAL.LIMIT>${zookeeper.initial.limit}</ZOOKEEPER.INITIAL.LIMIT>
+                                    <ZOOKEEPER.SYNC.LIMIT>${zookeeper.sync.limit}</ZOOKEEPER.SYNC.LIMIT>
+                                    <ZOOKEEPER.ID>${zookeeper.id}</ZOOKEEPER.ID>
+                                    <ZOOKEEPER.QUORUM>${zookeeper.quorum}</ZOOKEEPER.QUORUM>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                                <cmd>${startup.service}</cmd>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
