@@ -1,0 +1,76 @@
+version: '3'
+
+networks:
+  hadoop_cluster:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: ashokkumarchoppadandi/apache-zookeeper:3.6.3
+    networks:
+      - hadoop_cluster
+    ports:
+      - "2181:2181"
+      - "7000:7000"
+    hostname: zookeeper1
+    environment:
+      TICK_TIME: 2000
+      INIT_LIMIT: 5
+      SYNC_LIMIT: 2
+      DATA_DIR: \/tmp\/zookeeper
+      CLIENT_PORT: 2181
+      MAX_CLIENT_CONNECTIONS: 0
+      METRICS_PROVIDER_HTTP_PORT: 7000
+      METRICS_PROVIDER_EXPORT_JVM_INFO: "true"
+
+  hadoop:
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    networks:
+      - hadoop_cluster
+    ports:
+      - "50070:50070"
+      - "50030:50030"
+      - "8088:8088"
+      - "19888:19888"
+    hostname: hadoop
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/hadoop:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: hadoop
+      HISTORY_SERVER_HOST: hadoop
+
+  hmaster:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    networks:
+      - hadoop_cluster
+    ports:
+      - "16010:16010"
+      - "16030:16030"
+    depends_on:
+      - zookeeper
+      - hadoop
+    hostname: hmaster
+    environment:
+      HBASE_ROOT_DIR: hdfs:\/\/hadoop:9000\/hbase
+      HBASE_CLUSTER_DISTRIBUTED: "true"
+      ZOOKEEPER_QUORUM: zookeeper:2181
+    command:
+      - distributed
+      - master
+
+  regionserver1:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+      - hadoop
+      - hmaster
+    hostname: regionserver1
+    environment:
+      HBASE_ROOT_DIR: hdfs:\/\/hadoop:9000\/hbase
+      HBASE_CLUSTER_DISTRIBUTED: "true"
+      ZOOKEEPER_QUORUM: zookeeper:2181
+    command:
+      - distributed
+      - regionserver

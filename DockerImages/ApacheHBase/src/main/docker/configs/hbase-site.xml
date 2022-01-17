@@ -1,0 +1,14 @@
+<configuration>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>HBASE_ROOT_DIR</value>
+    </property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>HBASE_CLUSTER_DISTRIBUTED</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>ZOOKEEPER_QUORUM</value>
+    </property>
+</configuration>

@@ -1,0 +1,12 @@
+Distributed HBase
+
+docker run --name zookeeper --hostname zookeeper -p 2181:2181 -p 7000:7000 -idt ashokkumarchoppadandi/apache-zookeeper:3.6.3 sh
+
+docker run --name hadoop --hostname hadoop -e FS_DEFAULT_NAME="hdfs:\/\/hadoop:9000" -e YARN_RESOURCEMANAGER_HOSTNAME=hadoop -e HISTORY_SERVER_HOST=hadoop -p 50070:50070 -p 8088:8088 -p 19888:19888 -idt ashokkumarchoppadandi/apache-hadoop:2.7.6 sh
+
+docker run --name hbase --hostname hbase --link hadoop:hadoop --link zookeeper:zookeeper -e HBASE_ROOT_DIR="hdfs:\/\/hadoop:9000\/hbase" -e HBASE_CLUSTER_DISTRIBUTED=true -e ZOOKEEPER_QUORUM=zookeeper:2181 -p 16010:16010 -idt ashokkumarchoppadandi/apache-hbase:2.4.9 sh
+
+
+Standalone HBase:
+
+docker run --name hbase1 --hostname hbase1 -e HBASE_CONF_DIR=/usr/local/hbase/conf -p 16010:16010 -idt ashokkumarchoppadandi/apache-hbase:2.4.9 sh

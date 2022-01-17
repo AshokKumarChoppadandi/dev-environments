@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>DockerImages</artifactId>
+        <groupId>com.bigdata.docker</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>ApacheHBase</artifactId>
+    <version>2.4.9</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>apache-hbase-docker-host</docker.container.hostname>
+        <docker.container.name>apache-hbase-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>apache-hbase-docker-network</docker.network.name>
+        <docker.container.port.mapping>16010:16010</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>apache-hbase</docker.image.name>
+        <startup.service>sh</startup.service>
+
+        <apache.hbase.download.url>https://dlcdn.apache.org/hbase/2.4.9/hbase-2.4.9-bin.tar.gz</apache.hbase.download.url>
+        <hbase.home>/usr/local/apache-hbase</hbase.home>
+        <hbase.config.dir>/usr/local/configs/</hbase.config.dir>
+        <hbase.root.dir>hdfs://localhost:8020/hbase</hbase.root.dir>
+        <hbase.cluster.distributed>true</hbase.cluster.distributed>
+        <zookeeper.quorum>localhost:2181</zookeeper.quorum>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!-- <dockerHost>unix:///var/run/docker.sock</dockerHost> -->
+
+                    <!-- For Windows Environment-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args>
+                                    <APACHE_HBASE_DOWNLOAD_URL>${apache.hbase.download.url}</APACHE_HBASE_DOWNLOAD_URL>
+                                </args>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <HBASE_HOME>${hbase.home}</HBASE_HOME>
+                                    <HBASE_CONFIG_DIR>${hbase.config.dir}</HBASE_CONFIG_DIR>
+                                    <HBASE_ROOT_DIR>${hbase.root.dir}</HBASE_ROOT_DIR>
+                                    <HBASE_CLUSTER_DISTRIBUTED>${hbase.cluster.distributed}</HBASE_CLUSTER_DISTRIBUTED>
+                                    <ZOOKEEPER_QUORUM>${zookeeper.quorum}</ZOOKEEPER_QUORUM>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                                <cmd>${startup.service}</cmd>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -1,0 +1,19 @@
+version: '3'
+
+networks:
+  hbase_cluster:
+    driver: bridge
+
+services:
+  hbase:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    networks:
+      - hbase_cluster
+    ports:
+      - "16010:16010"
+      - "16030:16030"
+    hostname: hbase
+    environment:
+      HBASE_CONF_DIR: usr/local/hbase/conf
+    command:
+      - standalone

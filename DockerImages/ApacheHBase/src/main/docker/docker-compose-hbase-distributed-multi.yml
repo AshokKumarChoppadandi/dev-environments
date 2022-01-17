@@ -1,0 +1,243 @@
+version: '3'
+
+networks:
+  hadoop_cluster:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: ashokkumarchoppadandi/apache-zookeeper:3.6.3
+    networks:
+      - hadoop_cluster
+    ports:
+      - "2181:2181"
+      - "7000:7000"
+    hostname: zookeeper1
+    environment:
+      TICK_TIME: 2000
+      INIT_LIMIT: 5
+      SYNC_LIMIT: 2
+      DATA_DIR: \/tmp\/zookeeper
+      CLIENT_PORT: 2181
+      MAX_CLIENT_CONNECTIONS: 0
+      METRICS_PROVIDER_HTTP_PORT: 7000
+      METRICS_PROVIDER_EXPORT_JVM_INFO: "true"
+
+  namenode:
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    networks:
+      - hadoop_cluster
+    ports:
+      - "50070:50070"
+    hostname: namenode
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 3
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+    command: namenode
+
+  secondarynamenode:
+      image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+      networks:
+        - hadoop_cluster
+      depends_on:
+        - namenode
+      ports:
+        - "50030:50030"
+      hostname: secondarynamenode
+      environment:
+        FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+        DFS_REPLICATION: 3
+        YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+        HISTORY_SERVER_HOST: historyserver
+      command: secondarynamenode
+
+  resourcemanager:
+      image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+      networks:
+        - hadoop_cluster
+      depends_on:
+        - namenode
+        - secondarynamenode
+      ports:
+        - "8088:8088"
+      hostname: resourcemanager
+      environment:
+        FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+        DFS_REPLICATION: 3
+        YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+        HISTORY_SERVER_HOST: historyserver
+      command: resourcemanager
+
+  historyserver:
+      image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+      networks:
+        - hadoop_cluster
+      depends_on:
+        - namenode
+        - secondarynamenode
+        - resourcemanager
+      ports:
+        - "19888:19888"
+      hostname: historyserver
+      environment:
+        FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+        DFS_REPLICATION: 3
+        YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+        HISTORY_SERVER_HOST: historyserver
+      command: historyserver
+
+  slavenode1:
+      image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+      networks:
+        - hadoop_cluster
+      depends_on:
+        - namenode
+        - secondarynamenode
+        - resourcemanager
+        - historyserver
+      ports:
+        - "18042:18042"
+        - "15945:35945"
+      hostname: slavenode1
+      environment:
+        FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+        DFS_REPLICATION: 3
+        YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+        HISTORY_SERVER_HOST: historyserver
+      command: slavenode
+
+  slavenode2:
+      image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+      networks:
+        - hadoop_cluster
+      depends_on:
+        - namenode
+        - secondarynamenode
+        - resourcemanager
+        - historyserver
+      ports:
+        - "28042:18042"
+        - "25945:35945"
+      hostname: slavenode12
+      environment:
+        FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+        DFS_REPLICATION: 3
+        YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+        HISTORY_SERVER_HOST: historyserver
+      command: slavenode
+
+  slavenode3:
+      image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+      networks:
+        - hadoop_cluster
+      depends_on:
+        - namenode
+        - secondarynamenode
+        - resourcemanager
+        - historyserver
+      ports:
+        - "38042:18042"
+        - "35945:35945"
+      hostname: slavenode3
+      environment:
+        FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+        DFS_REPLICATION: 3
+        YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+        HISTORY_SERVER_HOST: historyserver
+      command: slavenode
+
+  hmaster:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    networks:
+      - hadoop_cluster
+    ports:
+      - "16010:16010"
+      - "16030:16030"
+    depends_on:
+      - zookeeper
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+      - slavenode1
+      - slavenode2
+      - slavenode3
+    hostname: hmaster
+    environment:
+      HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
+      HBASE_CLUSTER_DISTRIBUTED: "true"
+      ZOOKEEPER_QUORUM: zookeeper:2181
+    command:
+      - distributed
+      - master
+
+  regionserver1:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+      - slavenode1
+      - slavenode2
+      - slavenode3
+      - hmaster
+    hostname: regionserver1
+    environment:
+      HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
+      HBASE_CLUSTER_DISTRIBUTED: "true"
+      ZOOKEEPER_QUORUM: zookeeper:2181
+    command:
+      - distributed
+      - regionserver
+
+  regionserver2:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+      - slavenode1
+      - slavenode2
+      - slavenode3
+      - hmaster
+    hostname: regionserver2
+    environment:
+      HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
+      HBASE_CLUSTER_DISTRIBUTED: "true"
+      ZOOKEEPER_QUORUM: zookeeper:2181
+    command:
+      - distributed
+      - regionserver
+
+  regionserver3:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+      - slavenode1
+      - slavenode2
+      - slavenode3
+      - hmaster
+    hostname: regionserver3
+    environment:
+      HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
+      HBASE_CLUSTER_DISTRIBUTED: "true"
+      ZOOKEEPER_QUORUM: zookeeper:2181
+    command:
+      - distributed
+      - regionserver

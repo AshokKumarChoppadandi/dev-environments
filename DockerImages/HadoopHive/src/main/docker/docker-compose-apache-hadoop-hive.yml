@@ -16,6 +16,7 @@ services:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
     command: namenode
 
   secondarynamenode:
@@ -31,6 +32,7 @@ services:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
     command: secondarynamenode
 
   resourcemanager:
@@ -47,6 +49,7 @@ services:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
     command: resourcemanager
 
   historyserver:
