@@ -1,0 +1,39 @@
+version: '3'
+
+networks:
+  solr_cluster:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: ashokkumarchoppadandi/apache-zookeeper:3.6.3
+    networks:
+      - solr_cluster
+    ports:
+      - "2181:2181"
+      - "7001:7000"
+    hostname: zookeeper
+    environment:
+      TICK_TIME: 2000
+      INIT_LIMIT: 5
+      SYNC_LIMIT: 2
+      DATA_DIR: \/tmp\/zookeeper
+      CLIENT_PORT: 2181
+      MAX_CLIENT_CONNECTIONS: 0
+      METRICS_PROVIDER_HTTP_PORT: 7000
+      METRICS_PROVIDER_EXPORT_JVM_INFO: "true"
+  solr:
+    image: ashokkumarchoppadandi/apache-solr:8.11.1
+    networks:
+      - solr_cluster
+    depends_on:
+      - zookeeper
+    ports:
+      - "8983:8983"
+    hostname: solr
+    environment:
+      MEMORY: 1g
+      ZOOKEEPER_QUORUM: zookeeper:2181
+      SOLR_PORT: 8983
+    command:
+      - cloud

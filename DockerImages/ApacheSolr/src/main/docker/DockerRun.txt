@@ -1,0 +1,1 @@
+docker run --net docker_hadoop_cluster --name solr --hostname solr --link docker_zookeeper_1:zookeeper -e ZOOKEEPER_QUORUM=zookeeper:2181 -p 8983:8983 -idt ashokkumarchoppadandi/apache-solr:8.11.1 sh

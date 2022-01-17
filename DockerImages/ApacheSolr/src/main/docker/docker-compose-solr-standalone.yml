@@ -1,0 +1,16 @@
+version: '3'
+
+networks:
+  solr_cluster:
+    driver: bridge
+
+services:
+  solr:
+    image: ashokkumarchoppadandi/apache-solr:8.11.1
+    networks:
+      - solr_cluster
+    ports:
+      - "8983:8983"
+    hostname: solr
+    command:
+      - standalone
