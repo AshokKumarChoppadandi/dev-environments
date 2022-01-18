@@ -1,0 +1,23 @@
+version: '3'
+
+networks:
+  kafka_cluster:
+    driver: bridge
+
+services:
+  kafka:
+    image: ashokkumarchoppadandi/apache-kafka:2.6.1
+    networks:
+      - kafka_cluster
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+      - "8083:8083"
+    hostname: kafka
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/kafka:9092
+      ZOOKEEPER_CONNECT_LIST: "kafka:2181"
+      BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_ADVERTISED_HOST: kafka
+    command:
+      - sh
