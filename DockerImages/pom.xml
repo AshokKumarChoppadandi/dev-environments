@@ -14,6 +14,10 @@
         <module>ConfluentKafka</module>
         <module>MySQLMetastore</module>
         <module>HadoopHive</module>
+        <!--<module>ApacheAtlas</module>-->
+        <module>ApacheZookeeper</module>
+        <module>ApacheHBase</module>
+        <module>ApacheSolr</module>
     </modules>
 
     <properties>
