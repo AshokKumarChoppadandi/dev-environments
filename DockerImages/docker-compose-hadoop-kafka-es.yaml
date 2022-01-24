@@ -1,0 +1,254 @@
+version: '3'
+
+networks:
+  hadoop_cluster:
+    driver: bridge
+
+services:
+  namenode:
+    image: ashokkumarchoppadandi/hadoop-namenode:latest
+    networks:
+      - hadoop_cluster
+    ports:
+      - "50070:50070"
+    hostname: namenode
+    environment:
+      HOSTNAME: namenode
+      NAMENODE_HOST: namenode
+      RESOURCE_MANAGER_HOST: resourcemanager
+
+  secondarynamenode:
+    image: ashokkumarchoppadandi/hadoop-secondarynamenode:latest
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+    hostname: secondarynamenode
+    environment:
+      HOSTNAME: secondarynamenode
+      NAMENODE_HOST: namenode
+      RESOURCE_MANAGER_HOST: resourcemanager
+
+  resourcemanager:
+    image: ashokkumarchoppadandi/hadoop-resourcemanager:latest
+    networks:
+      - hadoop_cluster
+    ports:
+      - "8088:8088"
+    hostname: resourcemanager
+    environment:
+      HOSTNAME: resourcemanager
+      RESOURCE_MANAGER_HOST: resourcemanager
+      NAMENODE_HOST: namenode
+
+  historyserver:
+    image: ashokkumarchoppadandi/hadoop-mr-historyserver:latest
+    networks:
+      - hadoop_cluster
+    ports:
+      - "19888:19888"
+    hostname: historyserver
+    environment:
+      HOSTNAME: historyserver
+      RESOURCE_MANAGER_HOST: resourcemanager
+      NAMENODE_HOST: namenode
+      MR_HISTORYSERVER_HOST: "0.0.0.0"
+
+  mysql:
+    image: ashokkumarchoppadandi/mysql:latest
+    networks:
+      - hadoop_cluster
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@123
+      MYSQL_DATABASE: metastore
+
+  sparkhiveslave1:
+    image: ashokkumarchoppadandi/hadoop-spark-hive-slavenode:latest
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+      - mysql
+    ports:
+      - "18042:8042"
+      - "15945:35945"
+      - "4040:4040"
+      - "10002:10002"
+    hostname: sparkslave1
+    environment:
+      HOSTNAME: sparkslave1
+      METASTORE_HOST: mysql
+      RESOURCE_MANAGER_HOST: resourcemanager
+      NAMENODE_HOST: namenode
+      SECONDARY_NAMENODE_HOST: secondarynamenode
+      MR_HISTORYSERVER_HOST: "http:\/\/historyserver"
+
+  zookeeper:
+    image: ashokkumarchoppadandi/confluent-kafka-zookeeper:latest
+    networks:
+      - hadoop_cluster
+    ports:
+      - "2181:2181"
+    hostname: zookeeper
+    environment:
+      HOSTNAME: zookeeper
+      ZOOKEEPER_HOST: zookeeper
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: ashokkumarchoppadandi/confluent-kafka-broker:latest
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    hostname: broker
+    environment:
+      HOSTNAME: broker
+      BROKER_ID: 0
+      KAFKA_LISTENERS: PLAINTEXT:\/\/0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/broker:9092
+      DEFAULT_KAFKA_TOPIC_PARTITIONS: 1
+      ZOOKEEPERS_LIST: 'zookeeper:2181'
+      CONFLUENT_METADATA_SERVER_ADVERTISED_LISTENERS: http:\/\/broker:8090
+    volumes:
+      - ~/IdeaProjects:/IdeaProjects:ro
+
+  schemaregistry:
+    image: ashokkumarchoppadandi/confluent-schema-registry:latest
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+      - broker
+    ports:
+      - "8081:8081"
+    hostname: schemaregistry
+    environment:
+      HOSTNAME: schemaregistry
+      ZOOKEEPERS_LIST: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/broker:9092
+
+  connect:
+    image: ashokkumarchoppadandi/confluent-kafka-connect:latest
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+      - broker
+      - schemaregistry
+    ports:
+      - "8083:8083"
+    hostname: connect
+    environment:
+      HOSTNAME: connect
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/broker:9092
+      KAFKA_CONNECT_CLUSTER_GROUP_ID: connect-cluster
+      KAFKA_CONNECT_KEY_CONVERTOR: io.confluent.connect.avro.AvroConverter
+      KAFKA_CONNECT_VALUE_CONVERTOR: io.confluent.connect.avro.AvroConverter
+      SCHEMA_REGISTRY_URL: http:\/\/schemaregistry:8081
+      CONNECT_CONFIGS_TOPIC: docker-connect-configs
+      CONNECT_OFFSETS_TOPIC: docker-connect-offsets
+      CONNECT_STATUSES_TOPIC: docker-connect-statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_HOST: connect
+      CONNECT_PORT: 8083
+
+  ksql:
+    image: ashokkumarchoppadandi/confluent-kafka-ksql:latest
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - zookeeper
+      - broker
+      - schemaregistry
+    ports:
+      - "9099:8088"
+    hostname: ksql
+    environment:
+      HOSTNAME: ksql
+      BOOTSTRAP_SERVERS: 'broker:9092'
+      SCHEMAREGISTRY_URL: 'http:\/\/schemaregistry:8081'
+      KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
+      KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+      KSQL_LOGGING_PROCESSING_ROWS_INCLUDE: 'true'
+      UI_ENABLED: 'true'
+      KSQL_STREAMS_AUTO_OFFSET_RESET: 'latest'
+      KSQL_STREAMS_COMMIT_INTERVAL_MS: 2000
+      MAX_BYTES_BUFFERING: 10000000
+      DESERIALIZATION_ERROR: 'false'
+      KSQL_STREAMS_NUM_STREAM_THREADS: 1
+      KSQL_SERVICE_ID: docker_
+      KSQL_SINK_PARTITIONS: 4
+      KSQL_SINK_REPLICAS: 1
+#    volumes:
+#      - ./KSQL-UDFs:/usr/local/confluent/ext:ro
+  producer:
+    image: ashokkumarchoppadandi/edgar_logs_producer:latest
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - broker
+      - schemaregistry
+    environment:
+      BOOTSTRAP_SERVERS: broker:9092
+      KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      VALUE_SERIALIZER: io.confluent.kafka.serializers.KafkaAvroSerializer
+      SCHEMA_REGISTRY_URL: http:\/\/schemaregistry:8081
+      SCHEMA_FILE_LOCATION: \/root\/config\/edgar.avsc
+      TOPIC_NAME: edgar-logs-avro
+      INPUT_LOGS_DIR: \/root\/input-logs-dir\/edgar_logs_splitted
+      JAR_FILE_LOCATION: /root/
+      JAR_NAME: KafkaExamples-1.0-SNAPSHOT.jar
+      RUN_CLASS: com.bigdata.kafka.edgar_logs.EdgarLogKafkaProducer
+      CONFIG_FILE_PATH: /root/config/avro-config.properties
+    volumes:
+      - ~/IdeaProjects/StreamingExamples/KafkaExamples/src/main/resources/edgar_logs_splitted:/root/input-logs-dir/edgar_logs_splitted:ro
+
+  elasticsearch01:
+    image: ashokkumarchoppadandi/elasticsearch:latest
+    hostname: elasticsearch01
+    networks:
+      - hadoop_cluster
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      HOSTNAME: elasticsearch01
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: elasticsearch01
+      ES_NODE_MASTER: "true"
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: "127.0.0.1, [::1]"
+      ES_MASTER_NODES: elasticsearch01
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  kibana01:
+    image: ashokkumarchoppadandi/kibana:latest
+    hostname: kibanahost1
+    depends_on:
+      - elasticsearch01
+    networks:
+      - hadoop_cluster
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch01:9200"
+      KIBANA_SERVER_PORT: 5601
+      KIBANA_SERVER_HOST: 0.0.0.0
+      KIBANA_SERVER_NAME: kibanahost1

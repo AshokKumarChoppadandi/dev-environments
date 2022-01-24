@@ -1,0 +1,111 @@
+version: '3'
+
+networks:
+  confluent_kafka_cluster:
+    driver: bridge
+
+services:
+  zoonavigator:
+    image: elkozmon/zoonavigator:latest
+    container_name: zoonavigator
+    hostname: zoonavigator
+    networks: 
+      - confluent_kafka_cluster
+    environment:
+      HTTP_PORT: 8000
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "admin1.bigdata.com:192.168.0.111"
+      - "admin2.bigdata.com:192.168.0.112"
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"
+
+
+  kafkamanager:
+    image: ashokkumarchoppadandi/kafka-manager:latest
+    container_name: kafkamanager
+    hostname: kafkamanager
+    networks: 
+      - confluent_kafka_cluster
+    environment:
+      ZK_HOSTS: master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181
+    restart: always
+    ports:
+      - "9000:9000"
+    extra_hosts:
+      - "admin1.bigdata.com:192.168.0.111"
+      - "admin2.bigdata.com:192.168.0.112"
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"
+
+  alertmanager:
+    image: ashokkumarchoppadandi/alertmanager:latest
+    container_name: alertmanager
+    hostname: alertmanager
+    networks:
+      - confluent_kafka_cluster
+    environment:
+      ALERTMANAGER_HOST: alertmanager
+      ALERTMANAGER_PORT: 9093
+    restart: always
+    ports:
+      - "9093:9093"
+    volumes:
+      - ~/email-alertmanager/alertmanager.yml:/usr/local/alertmanager/alertmanager.yml:ro
+  prometheus:
+    image: ashokkumarchoppadandi/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus
+    networks: 
+      - confluent_kafka_cluster
+    environment:
+      ZOOKEEPER_HOSTS_WITH_JMX_EXPORTER_PORT: "master1.bigdata.com:8090,master2.bigdata.com:8090,master3.bigdata.com:8090"
+      BOOTSTRAP_SERVERS_WITH_JMX_EXPORTER_PORT: "worker1.bigdata.com:8090,worker2.bigdata.com:8090,worker3.bigdata.com:8090"
+      # SCHEMA_REGISTRY_WITH_JMX_PORT: "bigdata.cluster.node101:8100"
+      NODE_EXPORTER_METRICS_PORT: "master1.bigdata.com:9100,master2.bigdata.com:9100,master3.bigdata.com:9100,worker1.bigdata.com:9100,worker2.bigdata.com:9100,worker3.bigdata.com:9100"
+      ALERT_MANAGER_URL: "alertmanager:9093"
+    restart: always
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "admin1.bigdata.com:192.168.0.111"
+      - "admin2.bigdata.com:192.168.0.112"
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"
+
+  grafana:
+    image: ashokkumarchoppadandi/grafana:latest
+    container_name: grafana
+    hostname: grafana
+    networks: 
+      - confluent_kafka_cluster
+    environment:
+      ENABLE_ANONYMOUS_ACCESS: "true"
+      ORG_NAME: "Ashok Org"
+      ORG_ROLE: Admin
+    restart: always
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "admin1.bigdata.com:192.168.0.111"
+      - "admin2.bigdata.com:192.168.0.112"
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"
