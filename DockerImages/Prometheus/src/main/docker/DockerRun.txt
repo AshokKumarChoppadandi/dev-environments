@@ -1,0 +1,22 @@
+Prometheus with default config file (which collects data from itself) :
+
+docker run \
+  -idt \
+  --name prometheus \
+  --hostname prometheus \
+  -p 9090:9090 \
+  ashokkumarchoppadandi/prometheus:2.32.1 sh
+
+Prometheus with custom config file :
+
+docker run \
+  -idt \
+  --name prometheus \
+  --hostname prometheus \
+  -p 9090:9090 \
+  -e PROMETHEUS_HOST=prometheus \
+  -e PROMETHEUS_PORT:9090 \
+  -e PROMETHEUS_CONFIG_FILE=/usr/local/prometheus/prometheus.yml \
+  -e PROMETHEUS_DATA_DIR=/tmp/prometheus_data \
+  --mount type=bind,source="$(pwd)"/config/prometheus.yml,target=/usr/local/prometheus/prometheus.yml \
+  ashokkumarchoppadandi/prometheus:2.32.1 sh
