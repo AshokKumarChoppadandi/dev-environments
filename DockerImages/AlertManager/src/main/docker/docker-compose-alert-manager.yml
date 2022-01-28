@@ -1,0 +1,23 @@
+version: '3'
+
+networks:
+  alertmanager_cluster:
+    driver: bridge
+
+services:
+  alertmanager:
+    image: ashokkumarchoppadandi/alertmanager:0.23.0
+    container_name: alertmanager
+    hostname: alertmanager
+    networks:
+      - alertmanager_cluster
+    environment:
+      ALERT_MANAGER_HOME: /usr/local/alertmanager
+      ALERT_MANAGER_HOST: alertmanager
+      ALERT_MANAGER_PORT: 9093
+      ALERT_MANAGER_CONFIG_FILE: /usr/local/alertmanager/alertmanager.yml
+    restart: always
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./config/alertmanager.yml:/usr/local/alertmanager/alertmanager.yml:ro

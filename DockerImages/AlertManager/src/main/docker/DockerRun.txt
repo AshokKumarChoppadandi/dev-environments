@@ -1,0 +1,21 @@
+Alert Manager with default config file (which does nothing):
+
+docker run \
+  -idt \
+  --name alertmanager \
+  --hostname alertmanager \
+  -p 9093:9093
+  ashokkumarchoppadandi/alertmanager:latest sh
+
+Alert Manager with custom config file:
+
+docker run \
+  -idt \
+  --name alertmanager \
+  --hostname alertmanager \
+  -p 9093:9093 \
+  -e ALERT_MANAGER_HOST=alertmanager \
+  -e ALERT_MANAGER_PORT=9093 \
+  -e ALERT_MANAGER_CONFIG_FILE=/usr/local/alertmanager/alertmanager.yml \
+  --mount type=bind,source="$(pwd)"/config/alertmanager.yml,target=/usr/local/alertmanager/alertmanager.yml,readonly \
+  ashokkumarchoppadandi/alertmanager:latest sh

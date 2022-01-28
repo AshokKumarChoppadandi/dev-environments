@@ -1,0 +1,15 @@
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'SendEmailAlert'
+receivers:
+  - name: 'SendEmailAlert'
+    email_configs:
+      - to: 'to_email@gmail.com'
+        from: 'from_email@gmail.com'
+        smarthost: 'smtp.email.com:123'
+        auth_username: 'email_name@gmail.com'
+        auth_identity: 'email_name@gmail.com'
+        auth_password: 'password'

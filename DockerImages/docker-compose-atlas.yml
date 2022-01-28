@@ -52,7 +52,7 @@ services:
       - "35945:35945"
       - "4040:4040"
       - "10002:10002"
-    hostname: namenode
+    hostname: hadoop
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/hadoop:9000
       DFS_REPLICATION: 1
