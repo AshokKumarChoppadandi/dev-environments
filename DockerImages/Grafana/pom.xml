@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>DockerImages</artifactId>
+        <groupId>com.bigdata.docker</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>Grafana</artifactId>
+    <version>8.3.4</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>grafana-docker-host</docker.container.hostname>
+        <docker.container.name>grafana-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>grafana-docker-network</docker.network.name>
+        <docker.container.port.mapping>3000:3000</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>grafana</docker.image.name>
+
+        <grafana.download.url>https://dl.grafana.com/enterprise/release/grafana-enterprise-8.3.4.linux-amd64.tar.gz</grafana.download.url>
+        <grafana.home.dir>/usr/local/grafana</grafana.home.dir>
+
+        <app.mode>production</app.mode>
+        <grafana.temp.data.dir>data</grafana.temp.data.dir>
+        <temp.data.lifetime>24h</temp.data.lifetime>
+        <logs.dir>data/log</logs.dir>
+        <plugins.dir>data/plugins</plugins.dir>
+        <provisioning.dir>conf/provisioning</provisioning.dir>
+        <enforce.domain>false</enforce.domain>
+        <protocol>http</protocol>
+        <http.addr>""</http.addr>
+        <http.port>3000</http.port>
+        <serve.from.sub.path>false</serve.from.sub.path>
+        <router.logging>false</router.logging>
+        <static.root.path>public</static.root.path>
+        <enable.gzip>false</enable.gzip>
+        <cert.file>""</cert.file>
+        <cert.key>""</cert.key>
+        <read.timeout>0</read.timeout>
+        <database.type>sqlite3</database.type>
+        <database.host>127.0.0.1:3306</database.host>
+        <database.name>grafana</database.name>
+        <database.user>root</database.user>
+        <database.password>""</database.password>
+        <database.url>""</database.url>
+        <max.idle.conn>2</max.idle.conn>
+        <max.open.conn>""</max.open.conn>
+        <conn.max.lifetime>14400</conn.max.lifetime>
+        <log.queries>""</log.queries>
+        <ssl.mode>disable</ssl.mode>
+        <isolation.level>""</isolation.level>
+        <ca.cert.path>""</ca.cert.path>
+        <client.key.path>""</client.key.path>
+        <client.cert.path>""</client.cert.path>
+        <server.cert.name>""</server.cert.name>
+        <enable.anonymous.access>false</enable.anonymous.access>
+        <org.name>"Main Org."</org.name>
+        <org.role>Admin</org.role>
+        <default.admin.user>admin</default.admin.user>
+        <default.admin.password>admin</default.admin.password>
+
+        <startup.service>sh</startup.service>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!--<dockerHost>unix:///var/run/docker.sock</dockerHost>-->
+
+                    <!-- For Windows Environment-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args>
+                                    <GRAFANA_DOWNLOAD_URL>${grafana.download.url}</GRAFANA_DOWNLOAD_URL>
+                                </args>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <GRAFANA_HOME>${grafana.home.dir}</GRAFANA_HOME>
+                                    <APP_MODE>${app.mode}</APP_MODE>
+                                    <GRAFANA_TEMP_DATA_DIR>${grafana.temp.data.dir}</GRAFANA_TEMP_DATA_DIR>
+                                    <TEMP_DATA_LIFETIME>${temp.data.lifetime}</TEMP_DATA_LIFETIME>
+                                    <LOGS_DIR>${logs.dir}</LOGS_DIR>
+                                    <PLUGINS_DIR>${plugins.dir}</PLUGINS_DIR>
+                                    <PROVISIONING_DIR>${provisioning.dir}</PROVISIONING_DIR>
+                                    <ENFORCE_DOMAIN>${enforce.domain}</ENFORCE_DOMAIN>
+                                    <PROTOCOL>${protocol}</PROTOCOL>
+                                    <HTTP_ADDR>${http.addr}</HTTP_ADDR>
+                                    <HTTP_PORT>${http.port}</HTTP_PORT>
+                                    <SERVE_FROM_SUB_PATH>${serve.from.sub.path}</SERVE_FROM_SUB_PATH>
+                                    <ROUTER_LOGGING>${router.logging}</ROUTER_LOGGING>
+                                    <STATIC_ROOT_PATH>${static.root.path}</STATIC_ROOT_PATH>
+                                    <ENABLE_GZIP>${enable.gzip}</ENABLE_GZIP>
+                                    <CERT_FILE>${cert.file}</CERT_FILE>
+                                    <CERT_KEY>${cert.key}</CERT_KEY>
+                                    <READ_TIMEOUT>${read.timeout}</READ_TIMEOUT>
+                                    <DATABASE_TYPE>${database.type}</DATABASE_TYPE>
+                                    <DATABASE_HOST>${database.host}</DATABASE_HOST>
+                                    <DATABASE_NAME>${database.name}</DATABASE_NAME>
+                                    <DATABASE_USER>${database.user}</DATABASE_USER>
+                                    <DATABASE_PASSWORD>${database.password}</DATABASE_PASSWORD>
+                                    <DATABASE_URL>${database.url}</DATABASE_URL>
+                                    <MAX_IDLE_CONN>${max.idle.conn}</MAX_IDLE_CONN>
+                                    <MAX_OPEN_CONN>${max.open.conn}</MAX_OPEN_CONN>
+                                    <CONN_MAX_LIFETIME>${conn.max.lifetime}</CONN_MAX_LIFETIME>
+                                    <LOG_QUERIES>${log.queries}</LOG_QUERIES>
+                                    <SSL_MODE>${ssl.mode}</SSL_MODE>
+                                    <ISOLATION_LEVEL>${isolation.level}</ISOLATION_LEVEL>
+                                    <CA_CERT_PATH>${ca.cert.path}</CA_CERT_PATH>
+                                    <CLIENT_KEY_PATH>${client.key.path}</CLIENT_KEY_PATH>
+                                    <CLIENT_CERT_PATH>${client.cert.path}</CLIENT_CERT_PATH>
+                                    <SERVER_CERT_NAME>${server.cert.name}</SERVER_CERT_NAME>
+                                    <ENABLE_ANONYMOUS_ACCESS>${enable.anonymous.access}</ENABLE_ANONYMOUS_ACCESS>
+                                    <ORG_NAME>${org.name}</ORG_NAME>
+                                    <ORG_ROLE>${org.role}</ORG_ROLE>
+                                    <DEFAULT_ADMIN_USER>${default.admin.user}</DEFAULT_ADMIN_USER>
+                                    <DEFAULT_ADMIN_PASSWORD>${default.admin.password}</DEFAULT_ADMIN_PASSWORD>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                                <cmd>${startup.service}</cmd>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

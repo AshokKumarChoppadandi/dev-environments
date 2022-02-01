@@ -1,0 +1,36 @@
+version: '3'
+
+networks:
+  grafana_cluster:
+    driver: bridge
+
+services:
+  mysql:
+    image: ashokkumarchoppadandi/mysql:8
+    container_name: mysql
+    networks:
+      - grafana_cluster
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@123
+      MYSQL_DATABASE: grafana
+
+  grafana:
+    image: ashokkumarchoppadandi/grafana:8.3.4
+    container_name: grafana
+    networks:
+      - grafana_cluster
+    ports:
+      - "3010:3010"
+    hostname: grafana
+    depends_on:
+      - mysql
+    environment:
+      DEFAULT_ADMIN_USER: admin
+      DEFAULT_ADMIN_PASSWORD: admin
+      HTTP_PORT: 3010
+      DATABASE_TYPE: mysql
+      DATABASE_HOST: "mysql:3306"
+      DATABASE_NAME: grafana
+      DATABASE_USER: grafana
+      DATABASE_PASSWORD: grafana

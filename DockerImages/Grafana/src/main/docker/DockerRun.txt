@@ -1,0 +1,12 @@
+docker run \
+  -idt \
+  -p 3000:3000 \
+  --name grafana \
+  --hostname grafana \
+  -e DATABASE_TYPE=mysql \
+  -e DATABASE_HOST=mysql \
+  -e DATABASE_NAME=grafana \
+  -e DATABASE_USER=grafana \
+  -e DATABASE_PASSWORD=grafana \
+  --link mysql:mysql \
+  ashokkumarchoppadandi/grafana:latest sh

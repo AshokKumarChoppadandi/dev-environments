@@ -20,6 +20,7 @@
         <module>ApacheSolr</module>
         <module>AlertManager</module>
         <module>Prometheus</module>
+        <module>Grafana</module>
     </modules>
 
     <properties>

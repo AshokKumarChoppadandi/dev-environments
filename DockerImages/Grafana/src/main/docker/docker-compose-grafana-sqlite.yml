@@ -1,0 +1,19 @@
+version: '3'
+
+networks:
+  grafana_cluster:
+    driver: bridge
+
+services:
+  grafana:
+    image: ashokkumarchoppadandi/grafana:8.3.4
+    container_name: grafana
+    networks:
+      - grafana_cluster
+    ports:
+      - "3010:3010"
+    hostname: grafana
+    environment:
+      DEFAULT_ADMIN_USER: admin
+      DEFAULT_ADMIN_PASSWORD: admin
+      HTTP_PORT: 3010
