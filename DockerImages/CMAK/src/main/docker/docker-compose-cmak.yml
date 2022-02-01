@@ -1,0 +1,24 @@
+version: '3'
+
+networks:
+  cmak_cluster:
+    driver: bridge
+
+services:
+  cmak:
+    image: ashokkumarchoppadandi/cmak:3.0.0.5
+    container_name: cmak
+    networks:
+      - cmak_cluster
+    ports:
+      - "8080:8080"
+    hostname: cmak
+    environment:
+      ZK_HOSTS: "192.168.0.201:2181,192.168.0.202:2181,192.168.0.203:2181"
+    extra_hosts:
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"

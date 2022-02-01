@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>DockerImages</artifactId>
+        <groupId>com.bigdata.docker</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>CMAK</artifactId>
+    <version>3.0.0.5</version>
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>cmak-docker-host</docker.container.hostname>
+        <docker.container.name>cmak-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>cmak-docker-network</docker.network.name>
+        <docker.container.port.mapping>8080:8080</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>cmak</docker.image.name>
+
+        <cmak.download.version>3.0.0.5</cmak.download.version>
+        <cmak.home.dir>/usr/local/cmak</cmak.home.dir>
+        <zk.hosts>localhost:2181</zk.hosts>
+        <kafka.manager.username>admin</kafka.manager.username>
+        <kafka.manager.password>password</kafka.manager.password>
+        <application.config.file>${cmak.home.dir}/conf/application.conf</application.config.file>
+        <consumer.properties.file>${cmak.home.dir}/conf/consumer.properties</consumer.properties.file>
+        <http.port>8080</http.port>
+        <security.protocol>PLAINTEXT</security.protocol>
+        <key.deserializer>org.apache.kafka.common.serialization.ByteArrayDeserializer</key.deserializer>
+        <value.deserializer>org.apache.kafka.common.serialization.ByteArrayDeserializer</value.deserializer>
+        <startup.service>sh</startup.service>
+
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!--<dockerHost>unix:///var/run/docker.sock</dockerHost>-->
+
+                    <!-- For Windows Environment-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args>
+                                    <CMAK_DOWNLOAD_VERSION>${cmak.download.version}</CMAK_DOWNLOAD_VERSION>
+                                </args>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <CMAK_HOME>${cmak.home.dir}</CMAK_HOME>
+                                    <ZK_HOSTS>${zk.hosts}</ZK_HOSTS>
+                                    <KAFKA_MANAGER_USERNAME>${kafka.manager.username}</KAFKA_MANAGER_USERNAME>
+                                    <KAFKA_MANAGER_PASSWORD>${kafka.manager.password}</KAFKA_MANAGER_PASSWORD>
+                                    <APPLICATION_CONFIG_FILE>${application.config.file}</APPLICATION_CONFIG_FILE>
+                                    <CONSUMER_PROPERTIES_FILE>${consumer.properties.file}</CONSUMER_PROPERTIES_FILE>
+                                    <HTTP_PORT>${http.port}</HTTP_PORT>
+                                    <SECURITY_PROTOCOL>${security.protocol}</SECURITY_PROTOCOL>
+                                    <KEY_DESERIALIZER>${key.deserializer}</KEY_DESERIALIZER>
+                                    <VALUE_DESERIALIZER>${value.deserializer}</VALUE_DESERIALIZER>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                                <cmd>${startup.service}</cmd>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

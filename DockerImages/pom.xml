@@ -21,6 +21,7 @@
         <module>AlertManager</module>
         <module>Prometheus</module>
         <module>Grafana</module>
+        <module>CMAK</module>
     </modules>
 
     <properties>

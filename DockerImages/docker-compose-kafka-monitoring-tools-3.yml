@@ -1,0 +1,128 @@
+version: '3'
+
+networks:
+  confluent_kafka_cluster:
+    driver: bridge
+
+services:
+  zoonavigator:
+    image: elkozmon/zoonavigator:latest
+    container_name: zoonavigator
+    hostname: zoonavigator
+    networks: 
+      - confluent_kafka_cluster
+    environment:
+      HTTP_PORT: 8000
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"
+
+  cmak:
+    image: ashokkumarchoppadandi/cmak:3.0.0.5
+    container_name: cmak
+    hostname: cmak
+    networks: 
+      - confluent_kafka_cluster
+    environment:
+      ZK_HOSTS: master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181
+    restart: always
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"
+
+  alertmanager:
+    image: ashokkumarchoppadandi/alertmanager:0.23.0
+    container_name: alertmanager
+    hostname: alertmanager
+    networks:
+      - confluent_kafka_cluster
+    environment:
+      ALERTMANAGER_HOST: alertmanager
+      ALERTMANAGER_PORT: 9093
+      ALERT_MANAGER_CONFIG_FILE: /usr/local/alertmanager/alertmanager.yml
+    restart: always
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/usr/local/alertmanager/alertmanager.yml:ro
+
+  prometheus:
+    image: ashokkumarchoppadandi/prometheus:2.32.1
+    container_name: prometheus
+    hostname: prometheus
+    networks: 
+      - confluent_kafka_cluster
+    environment:
+      ZOOKEEPER_HOSTS_WITH_JMX_EXPORTER_PORT: "master1.bigdata.com:8090,master2.bigdata.com:8090,master3.bigdata.com:8090"
+      BOOTSTRAP_SERVERS_WITH_JMX_EXPORTER_PORT: "worker1.bigdata.com:8090,worker2.bigdata.com:8090,worker3.bigdata.com:8090"
+      # SCHEMA_REGISTRY_WITH_JMX_PORT: "bigdata.cluster.node101:8100"
+      NODE_EXPORTER_METRICS_PORT: "master1.bigdata.com:9100,master2.bigdata.com:9100,master3.bigdata.com:9100,worker1.bigdata.com:9100,worker2.bigdata.com:9100,worker3.bigdata.com:9100"
+      ALERT_MANAGER_URL: "alertmanager:9093"
+      PROMETHEUS_CONFIG_FILE: "/usr/local/prometheus/prometheus.yml"
+    restart: always
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "admin1.bigdata.com:192.168.0.111"
+      - "admin2.bigdata.com:192.168.0.112"
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"
+    volumes:
+      - ./prometheus.yml:/usr/local/prometheus/prometheus.yml:ro
+
+  mysql:
+    image: ashokkumarchoppadandi/mysql:8
+    container_name: mysql
+    networks:
+      - confluent_kafka_cluster
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@123
+      MYSQL_DATABASE: grafana
+
+  grafana:
+    image: ashokkumarchoppadandi/grafana:8.3.4
+    container_name: grafana
+    hostname: grafana
+    networks: 
+      - confluent_kafka_cluster
+    depends_on:
+      - mysql
+    environment:
+      DEFAULT_ADMIN_USER: admin
+      DEFAULT_ADMIN_PASSWORD: admin
+      HTTP_PORT: 3000
+      DATABASE_TYPE: mysql
+      DATABASE_HOST: "mysql:3306"
+      DATABASE_NAME: grafana
+      DATABASE_USER: grafana
+      DATABASE_PASSWORD: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "admin1.bigdata.com:192.168.0.111"
+      - "admin2.bigdata.com:192.168.0.112"
+      - "master1.bigdata.com:192.168.0.201"
+      - "master2.bigdata.com:192.168.0.202"
+      - "master3.bigdata.com:192.168.0.203"
+      - "worker1.bigdata.com:192.168.0.211"
+      - "worker2.bigdata.com:192.168.0.212"
+      - "worker3.bigdata.com:192.168.0.213"

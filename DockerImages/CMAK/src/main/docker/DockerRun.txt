@@ -1,0 +1,14 @@
+docker run \
+  -idt \
+  --name cmak \
+  --hostname cmak \
+   -p 8080:8080 \
+   --add-host master1.bigdata.com:192.168.0.201 \
+   --add-host master2.bigdata.com:192.168.0.202 \
+   --add-host master3.bigdata.com:192.168.0.203 \
+   --add-host worker1.bigdata.com:192.168.0.211 \
+   --add-host worker2.bigdata.com:192.168.0.212 \
+   --add-host worker3.bigdata.com:192.168.0.213 \
+   -e ZK_HOSTS=192.168.0.201:2181,192.168.0.202:2181,192.168.0.203:2181 \
+   ashokkumarchoppadandi/cmak:3.0.0.5 sh
+
