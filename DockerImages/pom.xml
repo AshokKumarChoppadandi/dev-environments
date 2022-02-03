@@ -22,6 +22,7 @@
         <module>Prometheus</module>
         <module>Grafana</module>
         <module>CMAK</module>
+        <module>KafkaMonitor</module>
     </modules>
 
     <properties>
