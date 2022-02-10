@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>DockerImages</artifactId>
+        <groupId>com.bigdata.docker</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>Elasticsearch</artifactId>
+    <version>7.17.0</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>elasticsearch-docker-host</docker.container.hostname>
+        <docker.container.name>elasticsearch-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>elasticsearch-docker-network</docker.network.name>
+        <docker.container.port.mapping>9200:9200</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>elasticsearch</docker.image.name>
+
+        <elasticsearch.download.version>7.17.0</elasticsearch.download.version>
+        <elasticsearch.download.url>https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${elasticsearch.download.version}-linux-x86_64.tar.gz</elasticsearch.download.url>
+        <elasticsearch.home.dir>/usr/local/elasticsearch</elasticsearch.home.dir>
+        <es.config.dir>${elasticsearch.home.dir}/config</es.config.dir>
+        <es.cluster.name>elasticsearch</es.cluster.name>
+        <es.node.name>node1</es.node.name>
+        <es.node.master>true</es.node.master>
+        <es.data.path>${elasticsearch.home.dir}/data</es.data.path>
+        <es.logs.path>${elasticsearch.home.dir}/logs</es.logs.path>
+        <es.network.host>0.0.0.0</es.network.host>
+        <es.http.port>9200</es.http.port>
+        <es.discovery.seed.hosts>"127.0.0.1, [::1]"</es.discovery.seed.hosts>
+        <es.bootstrap.memory.lock>false</es.bootstrap.memory.lock>
+        <es.master.nodes>node1</es.master.nodes>
+        <es.java.opts>"-Xms512m -Xmx512m"</es.java.opts>
+
+        <startup.service>sh</startup.service>
+
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!--<dockerHost>unix:///var/run/docker.sock</dockerHost>-->
+
+                    <!-- For Windows Environment-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args>
+                                    <ELASTICSEARCH_VERSION>${elasticsearch.download.version}</ELASTICSEARCH_VERSION>
+                                </args>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <ES_HOME>${elasticsearch.home.dir}</ES_HOME>
+                                    <ES_DOWNLOAD_URL>${elasticsearch.download.url}</ES_DOWNLOAD_URL>
+                                    <ES_CONFIG_DIR>${es.config.dir}</ES_CONFIG_DIR>
+                                    <ES_CLUSTER_NAME>${es.cluster.name}</ES_CLUSTER_NAME>
+                                    <ES_NODE_NAME>${es.node.name}</ES_NODE_NAME>
+                                    <ES_NODE_MASTER>${es.node.master}</ES_NODE_MASTER>
+                                    <ES_DATA_PATH>${es.data.path}</ES_DATA_PATH>
+                                    <ES_LOGS_PATH>${es.logs.path}</ES_LOGS_PATH>
+                                    <ES_NETWORK_HOST>${es.network.host}</ES_NETWORK_HOST>
+                                    <ES_HTTP_PORT>${es.http.port}</ES_HTTP_PORT>
+                                    <ES_DISCOVERY_SEED_HOSTS>${es.discovery.seed.hosts}</ES_DISCOVERY_SEED_HOSTS>
+                                    <ES_BOOTSTRAP_MEMORY_LOCK>${es.bootstrap.memory.lock}</ES_BOOTSTRAP_MEMORY_LOCK>
+                                    <ES_MASTER_NODES>${es.master.nodes}</ES_MASTER_NODES>
+                                    <ES_JAVA_OPTS>${es.java.opts}</ES_JAVA_OPTS>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                                <cmd>${startup.service}</cmd>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
