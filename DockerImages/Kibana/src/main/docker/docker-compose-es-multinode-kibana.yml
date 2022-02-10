@@ -1,0 +1,103 @@
+version: '3.5'
+
+networks:
+  es_cluster:
+    name: es_cluster
+    driver: bridge
+
+services:
+  elasticsearch01:
+    image: ashokkumarchoppadandi/elasticsearch:7.17.0
+    hostname: elasticsearch01
+    container_name: elasticsearch01
+    networks:
+      - es_cluster
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      HOSTNAME: elasticsearch01
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: elasticsearch01
+      ES_NODE_MASTER: "true"
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: elasticsearch02, elasticsearch03
+      ES_MASTER_NODES: elasticsearch01, elasticsearch02, elasticsearch03
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  elasticsearch02:
+    image: ashokkumarchoppadandi/elasticsearch:7.17.0
+    hostname: elasticsearch02
+    container_name: elasticsearch02
+    networks:
+      - es_cluster
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    environment:
+      HOSTNAME: elasticsearch02
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: elasticsearch02
+      ES_NODE_MASTER: "true"
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: elasticsearch01, elasticsearch03
+      ES_MASTER_NODES: elasticsearch01, elasticsearch02, elasticsearch03
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  elasticsearch03:
+    image: ashokkumarchoppadandi/elasticsearch:7.17.0
+    hostname: elasticsearch03
+    container_name: elasticsearch03
+    networks:
+      - es_cluster
+    ports:
+      - "9202:9200"
+      - "9302:9300"
+    environment:
+      HOSTNAME: elasticsearch03
+      ES_CLUSTER_NAME: my-elasticsearch
+      ES_NODE_NAME: elasticsearch03
+      ES_NODE_MASTER: "true"
+      ES_DATA_PATH: "/usr/local/elasticsearch/data/"
+      ES_LOGS_PATH: "/usr/local/elasticsearch/logs/"
+      ES_NETWORK_HOST: 0.0.0.0
+      ES_HTTP_PORT: 9200
+      ES_BOOTSTRAP_MEMORY_LOCK: "true"
+      ES_DISCOVERY_SEED_HOSTS: elasticsearch01, elasticsearch03
+      ES_MASTER_NODES: elasticsearch01, elasticsearch02, elasticsearch03
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  kibana01:
+    image: ashokkumarchoppadandi/kibana:7.17.0
+    hostname: kibanahost1
+    container_name: kibanahost1
+    depends_on:
+      - elasticsearch01
+      - elasticsearch02
+      - elasticsearch03
+    networks:
+      - es_cluster
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch01:9200", "http://elasticsearch02:9200", "http://elasticsearch03:9200"]'
+      KIBANA_SERVER_PORT: 5601
+      KIBANA_SERVER_HOST: 0.0.0.0
+      KIBANA_SERVER_NAME: kibanahost1
