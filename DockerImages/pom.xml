@@ -23,6 +23,8 @@
         <module>Grafana</module>
         <module>CMAK</module>
         <module>KafkaMonitor</module>
+        <module>Elasticsearch</module>
+        <module>Kibana</module>
     </modules>
 
     <properties>
