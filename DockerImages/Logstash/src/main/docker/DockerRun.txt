@@ -1,0 +1,13 @@
+docker run \
+  --net es_cluster \
+  -idt \
+  --name logstash \
+  --hostname logstash \
+  --link elasticsearch01:elasticsearch01 \
+  --link elasticsearch02:elasticsearch02 \
+  --link elasticsearch03:elasticsearch03 \
+  --link kibanahost1:kibanahost1 \
+  -e LOGSTASH_CONFIG_FILE=logstash_cars.config \
+  --mount type=bind,source=/c/Users/lenovo/IdeaProjects/dev-environments/DockerImages/Logstash/src/main/docker/configs/logstash_cars.config,target=/usr/local/logstash/config/logstash_cars.config,readonly \
+  --mount type=bind,source=/c/Users/lenovo/IdeaProjects/dev-environments/DockerImages/Logstash/src/main/docker/input-data,target=/home/logstash/input-data \
+  ashokkumarchoppadandi/logstash:7.17.0 sh
