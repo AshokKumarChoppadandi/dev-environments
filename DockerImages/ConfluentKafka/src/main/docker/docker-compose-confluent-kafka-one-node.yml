@@ -1,0 +1,22 @@
+version: '3.5'
+
+networks:
+  kafka_cluster:
+    driver: bridge
+    name: kafka_cluster
+
+services:
+  kafka:
+    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    container_name: kafka
+    networks:
+      - kafka_cluster
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+      - "8081:8081"
+      - "8083:8083"
+      - "8088:8088"
+    hostname: kafka
+    command: sh
+
