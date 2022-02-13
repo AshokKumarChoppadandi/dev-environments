@@ -4,6 +4,31 @@
 
 This is the Maven project helps in build the docker image for Elasticsearch using the `docker-maven-plugin`. [Click Here](https://github.com/AshokKumarChoppadandi/dev-environments/tree/develop/MavenDockerHelloWorld) To know more about the plugin and building the docker images from it.
 
+## Pre-requisites
+
+vm.max_map_count needs to be set to higher value i.e., 262144 on the host machine.
+
+Windows Docker Desktop:
+
+```
+wsl -d docker-desktop sysctl -w vm.max_map_count=262144
+
+or 
+
+wsl -d docker-desktop
+echo "vm.max_map_count = 262144" > /etc/sysctl.d/99-docker-desktop.conf
+#    OR
+echo 262144 >> /proc/sys/vm/max_map_count
+```
+
+This will work for only that particular session, but to make it permanent the following are steps required:
+
+* Create a bat file i.e., setting_vm_max_at_boot.bat with the command "wsl -d docker-desktop sysctl -w vm.max_map_count=262144"
+* Copy the file to the windows startup location, press "Windows + R"
+* Type "shell:startup" and press Enter.
+* Copy the bat file created to the start location.
+* Restart the Docker Engine
+
 ## Maven commands to Build & Push Image
 
 ***Build:***
