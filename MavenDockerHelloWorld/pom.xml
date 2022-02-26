@@ -42,7 +42,7 @@
                         </goals>
                     </execution>
 
-                    <execution>
+                    <!--<execution>
                         <id>start</id>
                         <phase>pre-integration-test</phase>
                         <goals>
@@ -56,12 +56,16 @@
                         <goals>
                             <goal>stop</goal>
                         </goals>
-                    </execution>
+                    </execution>-->
                 </executions>
 
                 <configuration>
                     <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
                     <dockerHost>unix:///var/run/docker.sock</dockerHost>
+
+                    <!-- For Windows Environment-->
+                    <!--<dockerHost>npipe:////./pipe/docker_engine</dockerHost>-->
                     <authConfig>
                         <username>${docker.hub.username}</username>
                         <password>${docker.hub.password}</password>

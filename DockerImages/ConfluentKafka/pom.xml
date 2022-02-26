@@ -112,10 +112,10 @@
                 <configuration>
                     <verbose>true</verbose>
                     <!-- For LINUX Environment-->
-                    <!--<dockerHost>unix:///var/run/docker.sock</dockerHost>-->
+                    <dockerHost>unix:///var/run/docker.sock</dockerHost>
 
                     <!-- For Windows Environment-->
-                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <!--<dockerHost>npipe:////./pipe/docker_engine</dockerHost>-->
                     <authConfig>
                         <username>${docker.hub.username}</username>
                         <password>${docker.hub.password}</password>
