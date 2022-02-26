@@ -37,6 +37,10 @@
         <zookeeper.max.client.connections>0</zookeeper.max.client.connections>
         <zookeeper.enable.server>false</zookeeper.enable.server>
         <zookeeper.admin.server.port>8080</zookeeper.admin.server.port>
+        <zookeeper.quorum>localhost</zookeeper.quorum>
+        <zookeeper.id>1</zookeeper.id>
+        <zookeeper.init.limit>5</zookeeper.init.limit>
+        <zookeeper.sync.limit>2</zookeeper.sync.limit>
 
         <!-- Kafka Broker Properties-->
         <broker.id>0</broker.id>
@@ -142,6 +146,10 @@
                                     <ZOOKEEPER_MAX_CLIENT_CONNECTIONS>${zookeeper.max.client.connections}</ZOOKEEPER_MAX_CLIENT_CONNECTIONS>
                                     <ZOOKEEPER_ENABLE_SERVER>${zookeeper.enable.server}</ZOOKEEPER_ENABLE_SERVER>
                                     <ZOOKEEPER_ADMIN_SERVER_PORT>${zookeeper.admin.server.port}</ZOOKEEPER_ADMIN_SERVER_PORT>
+                                    <ZOOKEEPER_QUORUM>${zookeeper.quorum}</ZOOKEEPER_QUORUM>
+                                    <ZOOKEEPER_ID>${zookeeper.id}</ZOOKEEPER_ID>
+                                    <ZOOKEEPER_INIT_LIMIT>${zookeeper.init.limit}</ZOOKEEPER_INIT_LIMIT>
+                                    <ZOOKEEPER_SYNC_LIMIT>${zookeeper.sync.limit}</ZOOKEEPER_SYNC_LIMIT>
                                     <BROKER_ID>${broker.id}</BROKER_ID>
                                     <BROKER_HOST>${broker.host}</BROKER_HOST>
                                     <BROKER_PORT>${broker.port}</BROKER_PORT>

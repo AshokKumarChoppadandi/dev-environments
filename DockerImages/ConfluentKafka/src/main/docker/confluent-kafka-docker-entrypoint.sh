@@ -11,18 +11,60 @@ usage() {
 	exit 1
 }
 
+# DEFINING A USAGE FUNCTION
+zookeeper_usage() {
+	echo "Invalid Argument - $1"
+	echo "Usage: $0 [ zookeeper] [standalone / replicated]"
+	echo "Stopping execution!"
+	exit 1
+}
+
 LOG_FILE_PATH="$CONFLUENT_HOME"/logs/server.log
 
+SERVICE_TYPE=$1
+ZOOKEEPER_SERVICE_TYPE=$2
+echo "Input Service Type 1 - ${SERVICE_TYPE}"
+echo "Input Service Type 2 - ${ZOOKEEPER_SERVICE_TYPE}"
+
+configure_zookeeper_replicated_properties() {
+  echo "Configuring Zookeeper Replicated Properties"
+
+  ZOOKEEPER_SERVERS=(${ZOOKEEPER_QUORUM//,/ })
+  SERVER_NUMBER=1
+  for SERVER in "${ZOOKEEPER_SERVERS[@]}"; do
+    echo "server.$SERVER_NUMBER=$SERVER:2888:3888" >> "${CONFIGS_DIR}"/zookeeper.properties
+    SERVER_NUMBER=$((SERVER_NUMBER+1))
+  done
+}
+
 start_zookeeper() {
-  echo "Starting Zookeeper..."
+  case "${ZOOKEEPER_SERVICE_TYPE,,}" in
+    "sh" | "standalone" | "replicated" )
+      echo "Started configuring Zookeeper properties..."
+    ;;
+
+    * )
+      zookeeper_usage "${$ZOOKEEPER_SERVICE_TYPE,,}"
+    ;;
+  esac
 
   # ZOOKEEPER PROPERTIES
   sed -i -e "s/ZOOKEEPER_DATA_DIR/$ZOOKEEPER_DATA_DIR/" "${CONFIGS_DIR}"/zookeeper.properties
   sed -i -e "s/ZOOKEEPER_CLIENT_PORT/$ZOOKEEPER_CLIENT_PORT/" "${CONFIGS_DIR}"/zookeeper.properties
   sed -i -e "s/ZOOKEEPER_MAX_CLIENT_CONNECTIONS/$ZOOKEEPER_MAX_CLIENT_CONNECTIONS/" "${CONFIGS_DIR}"/zookeeper.properties
   sed -i -e "s/ZOOKEEPER_TICK_TIME/$ZOOKEEPER_TICK_TIME/" "${CONFIGS_DIR}"/zookeeper.properties
+  sed -i -e "s/ZOOKEEPER_INIT_LIMIT/$ZOOKEEPER_INIT_LIMIT/" "${CONFIGS_DIR}"/zookeeper.properties
+  sed -i -e "s/ZOOKEEPER_SYNC_LIMIT/$ZOOKEEPER_SYNC_LIMIT/" "${CONFIGS_DIR}"/zookeeper.properties
   sed -i -e "s/ZOOKEEPER_ENABLE_SERVER/$ZOOKEEPER_ENABLE_SERVER/" "${CONFIGS_DIR}"/zookeeper.properties
   sed -i -e "s/ZOOKEEPER_ADMIN_SERVER_PORT/$ZOOKEEPER_ADMIN_SERVER_PORT/" "${CONFIGS_DIR}"/zookeeper.properties
+
+  TMP=$(echo "$ZOOKEEPER_DATA_DIR" | sed -r 's/\\//g')
+  mkdir "$TMP"
+
+  if [ "$ZOOKEEPER_SERVICE_TYPE" = "replicated" ]; then
+    configure_zookeeper_replicated_properties
+    echo "$ZOOKEEPER_ID" > "$TMP"/myid
+  fi
 
   "$CONFLUENT_HOME"/bin/zookeeper-server-start -daemon $CONFIGS_DIR/zookeeper.properties
   echo "Started Zookeeper Service..."
@@ -171,9 +213,6 @@ start_all() {
   start_ksql_db
   LOG_FILE_PATH="$CONFLUENT_HOME"/logs/server.log
 }
-
-SERVICE_TYPE=$1
-echo "Input Service Type - ${SERVICE_TYPE}"
 
 case "${SERVICE_TYPE,,}" in
   "sh" )
