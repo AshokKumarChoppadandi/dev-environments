@@ -1,0 +1,49 @@
+Elasticsearch :
+
+    Need to set vm.max_map_count=262144
+
+PostgresSQL:
+
+    To access PostgreSQL outside the node i.e., from different server:
+        1. Default installation location if installed with dnf / yum is - /var/lib/pgsql
+        2. Initially PostgreSQL is accessed only with the postgres user (created at the time of installation)
+        3. To access psql shell - sudo -iu postgres
+        4. Create a User Role and Password
+             CREATE USER bigdata WITH PASSWORD 'bigdata';
+        5. All other connections to access the PostgreSQL Server by making - listener_address = '*'
+        6. Edit pg_hba.conf to allow other user access the PostgreSQL Server from outside the node.
+             # IPv4 local connections:
+             host    all             all             127.0.0.1/32            md5
+             host    all             all             0.0.0.0/0               md5
+             host    all             all             localhost               md5
+        7. Disable the firewall. In CentOS 7 / 8
+            systemctl stop firewalld.service
+            systemctl disable firewalld.service
+        7. psql -h <hostname> -p <port> -U <userName> <dbName>
+
+            Ex:
+                psql -h localhost -p 5432 -U bigdata bigdatadb
+                psql -h 127.0.0.1 -p 5432 -U bigdata bigdatadb
+                psql -h 192.168.0.144 -p 5432 -U bigdata bigdatadb
+
+
+
+kafka-avro-console-producer \
+ --broker-list 192.168.0.211:9092,192.168.0.212:9092,192.168.0.213:9092, \
+ --topic Test  \
+ --property schema.registry.url=http://localhost:8081 \
+ --property value.schema.id=2
+
+{"f1": "value1"}
+{"f1": "value2"}
+{"f1": "value3"}
+
+kafka-avro-console-consumer \
+  --bootstrap-server 192.168.0.211:9092,192.168.0.212:9092,192.168.0.213:9092 \
+  --topic Test \
+  --from-beginning \
+  --property schema.registry.url=http://localhost:8081 \
+  --property print.key=true \
+  --property print.value=true \
+  --property key.separator='|'
+
