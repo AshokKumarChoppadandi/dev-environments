@@ -1,8 +1,9 @@
-version: '3'
+version: '3.5'
 
 networks:
   confluent_kafka_cluster:
     driver: bridge
+    name: confluent_kafka_cluster
 
 services:
   zoonavigator:
@@ -23,6 +24,7 @@ services:
       - "worker1.bigdata.com:192.168.0.211"
       - "worker2.bigdata.com:192.168.0.212"
       - "worker3.bigdata.com:192.168.0.213"
+#      - "worker4.bigdata.com:192.168.0.214"
 
   cmak:
     image: ashokkumarchoppadandi/cmak:3.0.0.5
@@ -42,6 +44,7 @@ services:
       - "worker1.bigdata.com:192.168.0.211"
       - "worker2.bigdata.com:192.168.0.212"
       - "worker3.bigdata.com:192.168.0.213"
+#      - "worker4.bigdata.com:192.168.0.214"
 
   alertmanager:
     image: ashokkumarchoppadandi/alertmanager:0.23.0
@@ -66,10 +69,14 @@ services:
     networks: 
       - confluent_kafka_cluster
     environment:
+      PROMETHEUS_HOME: /usr/local/prometheus
+      PROMETHEUS_HOST: prometheus
       ZOOKEEPER_HOSTS_WITH_JMX_EXPORTER_PORT: "master1.bigdata.com:8090,master2.bigdata.com:8090,master3.bigdata.com:8090"
       BOOTSTRAP_SERVERS_WITH_JMX_EXPORTER_PORT: "worker1.bigdata.com:8090,worker2.bigdata.com:8090,worker3.bigdata.com:8090"
+      # BOOTSTRAP_SERVERS_WITH_JMX_EXPORTER_PORT: "worker1.bigdata.com:8090,worker2.bigdata.com:8090,worker3.bigdata.com:8090,worker4.bigdata.com:8090"
       # SCHEMA_REGISTRY_WITH_JMX_PORT: "bigdata.cluster.node101:8100"
       NODE_EXPORTER_METRICS_PORT: "master1.bigdata.com:9100,master2.bigdata.com:9100,master3.bigdata.com:9100,worker1.bigdata.com:9100,worker2.bigdata.com:9100,worker3.bigdata.com:9100"
+      #NODE_EXPORTER_METRICS_PORT: "master1.bigdata.com:9100,master2.bigdata.com:9100,master3.bigdata.com:9100,worker1.bigdata.com:9100,worker2.bigdata.com:9100,worker3.bigdata.com:9100,worker4.bigdata.com:9100"
       ALERT_MANAGER_URL: "alertmanager:9093"
       PROMETHEUS_CONFIG_FILE: "/usr/local/prometheus/prometheus.yml"
     restart: always
@@ -84,8 +91,10 @@ services:
       - "worker1.bigdata.com:192.168.0.211"
       - "worker2.bigdata.com:192.168.0.212"
       - "worker3.bigdata.com:192.168.0.213"
+#      - "worker4.bigdata.com:192.168.0.214"
     volumes:
       - ./prometheus.yml:/usr/local/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/usr/local/prometheus/alert_rules.yml:ro
 
   mysql:
     image: ashokkumarchoppadandi/mysql:8
@@ -126,3 +135,4 @@ services:
       - "worker1.bigdata.com:192.168.0.211"
       - "worker2.bigdata.com:192.168.0.212"
       - "worker3.bigdata.com:192.168.0.213"
+#      - "worker4.bigdata.com:192.168.0.214"

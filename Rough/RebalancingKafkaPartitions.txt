@@ -1,0 +1,136 @@
+Re-balancing Kafka Partitions:
+
+All these methods should be executed from Admin Machine and kafka-reassign-partitions.sh is the command used to re-balance the cluster manually.
+
+1. Using Plain Commands and JSON (Download Kafka binaries on Admin Machine) - This helps in re-balancing the partitions for the given topics.
+
+    i. Create a JSON file with Topics to reassign the partitions - topics-reassignment.json:
+
+        vi topics-reassignment.json
+
+            {
+              "version": 1,
+              "topics": [
+                {"topic":  "rebalance-test"}
+              ]
+            }
+
+
+    ii. Generate the Partition Re-Assignment JSON using the above topics-to-rebalance.json :
+
+         kafka-reassign-partitions \
+           --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181 \
+           --topics-to-move-json-file topics-to-rebalance.json \
+           --broker-list "211,212,213" \
+           --generate
+
+         Current partition replica assignment
+         {"version":1,"partitions":[{"topic":"rebalance-test","partition":1,"replicas":[213,211],"log_dirs":["any","any"]},{"topic":"rebalance-test","partition":0,"replicas":[212,213],"log_dirs":["any","any"]}]}
+
+         Proposed partition reassignment configuration
+         {"version":1,"partitions":[{"topic":"rebalance-test","partition":1,"replicas":[212,213],"log_dirs":["any","any"]},{"topic":"rebalance-test","partition":0,"replicas":[211,212],"log_dirs":["any","any"]}]}
+
+
+    iii. Create the Partition Re-Assignment JSON file from the above output - rebalance-topics.json
+
+        vi rebalance-topics.json
+
+        {
+          "version":1,
+          "partitions": [
+            {
+              "topic":"rebalance-test",
+              "partition":1,
+              "replicas":[212,213],
+              "log_dirs":["any","any"]
+            },
+            {
+              "topic":"rebalance-test",
+              "partition":0,
+              "replicas":[211,212],
+              "log_dirs":["any","any"]
+            }
+          ]
+        }
+
+
+    iv. Re-balancing the topic partitions using the above json file - rebalance-topics.json
+
+    kafka-reassign-partitions \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+      --reassignment-json-file rebalance-topics.json \
+      --execute
+
+    v. Validate the Reassignment using kafka-reassign-partitions verify command:
+
+    kafka-reassign-partitions \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+      --reassignment-json-file rebalance-topics.json \
+      --verify
+
+    vi. Validate the Reassignment using kafka-topics describe command:
+
+    kafka-topics \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --describe \
+      --topic rebalance-test
+
+    vii. Validate from Kafka Manager / CMAK
+
+        Go to the tab - Reassign Partitions and check it.
+
+    viii. After every partition reassignment it is good run the Preferred Leader Election
+
+     Deprecated:
+     kafka-preferred-replica-election \
+       --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka
+
+     New:
+     For all topics:
+
+     kafka-leader-election --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --election-type PREFERRED --all-topic-partitions
+
+     For one topic and one partition:
+
+     kafka-leader-election --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --election-type PREFERRED --topic rebalance-test --partition 0
+     kafka-leader-election --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --election-type PREFERRED --topic rebalance-test --partition 1
+
+2. Using CMAK / Kafka Manager - This helps in re-balancing the partitions for 1 topic at a time.
+
+    i. Go to the Topic view and select the topic for which leader election needs to be performed
+
+    ii. Click on Generate Partition Assignments
+
+    iii. Check the assignments for each partition and confirm the assignments. (This will create the rebalance-topics.json file for us like above example)
+
+    iv. Then go to the topic view (Same topic for which the reassignment json is generated)
+
+    v. Click on Reassign Partitions
+
+    vi. Go to Reassign Partitions
+
+    vii. Click on Reassign Partitions Tab to validate the reassignment.
+
+    viii. Then click on Preferred Replication Election and click on Run Preferred Replica Election
+
+    ix.  Go to Preferred Replication Election to validate the election.
+
+    NOTE: It is possible to assign the partitions manually to the brokers from CMAK using the option (Manual Partition Assignments)
+
+3. Using Kafka Tools by LinkedIn - This helps us to re-balance all the topic partitions available in cluster.
+
+    It allows to us to automate and generate the Partitions JSON file automatically.
+    Once the setup is ready (Setup documentation link)
+    kafka-assigner is the command used from kafka-tools, and it has multiple modules. (https://github.com/linkedin/kafka-tools/wiki/module-balance)
+    'balance' is the module used for re-balancing the cluster's topic partitions.
+
+    i. Kafka Assigner DRY RUN
+
+    kafka-assigner --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka --generate balance --types count
+
+    ii. Kafka Assigner Executing
+
+    kafka-assigner --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka --execute balance --types count
+
+
+

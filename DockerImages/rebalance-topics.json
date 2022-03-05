@@ -1,0 +1,17 @@
+{
+  "version":1,
+  "partitions": [
+    {
+      "topic":"rebalance-test",
+      "partition":1,
+      "replicas":[212,213],
+      "log_dirs":["any","any"]
+    },
+    {
+      "topic":"rebalance-test",
+      "partition":0,
+      "replicas":[211,212],
+      "log_dirs":["any","any"]
+    }
+  ]
+}

@@ -7,9 +7,9 @@ route:
 receivers:
   - name: 'SendEmailAlert'
     email_configs:
-      - to: 'to_email@gmail.com'
-        from: 'from_email@gmail.com'
-        smarthost: 'smtp.email.com:123'
-        auth_username: 'email_name@gmail.com'
-        auth_identity: 'email_name@gmail.com'
-        auth_password: 'password'
+      - to: 'test123@gmail.com'
+        from: 'test123@gmail.com'
+        smarthost: 'smtp.gmail.com:465'
+        auth_username: 'test123@gmail.com'
+        auth_identity: 'test123@gmail.com'
+        auth_password: 'test123'

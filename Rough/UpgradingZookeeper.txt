@@ -1,0 +1,100 @@
+Upgrading Zookeeper:
+
+Precautions:
+    1. Backup all the configuration files of Zookeeper
+    2. Backup all the Zookeeper data from the leader. It will get you back to the latest committed state in case of a failure.
+
+Finding out the Zookeeper Leader
+
+    echo srvr | nc 192.168.0.201 2181
+
+    echo srvr | nc 192.168.0.202 2181 # (In this case this is the leader)
+
+    echo srvr | nc 192.168.0.203 2181
+
+Backing up the Leader configs data:
+
+    ssh bigdata@master2.bigdata.com
+    sudo cp -r /opt/confluent/configs /opt/confluent/backup_configs
+    sudo cp -r /opt/confluent/data /opt/confluent/backup_data
+    ll /opt/confluent/
+
+Steps:
+
+For each ZooKeeper server, repeat the following steps. The leader ZooKeeper server should be upgraded last:
+
+Step 1:
+
+    Stop the ZooKeeper process gracefully.
+
+    SSH in to the followers first and last on the Leader Zookeeper Node
+
+    ssh bigdata@master3.bigdata.com
+
+    echo srvr | nc 192.168.0.203 2181 | grep version
+
+    sudo systemctl stop zookeeper.service
+
+Step 2:
+
+    Upgrade the ZooKeeper binary.
+
+    wget https://packages.confluent.io/archive/6.2/confluent-community-6.2.2.tar.gz
+
+    sudo tar -xzvf confluent-community-6.2.2.tar.gz -C /usr/local/
+
+    sudo ln -sfn /usr/local/confluent-6.2.2 /usr/local/confluent
+
+    Adding extra properties: (sudo vi /opt/confluent/configs/zookeeper.properties)
+
+        admin.enableServer=true
+        admin.serverPort=8085
+        4lw.commands.whitelist=*
+
+Step 3:
+
+    Start the ZooKeeper process.
+
+    sudo systemctl start zookeeper.service
+
+    echo srvr | nc 192.168.0.203 2181 | grep version
+
+Step 4:
+
+    Wait until all the followers are in sync with the leader. The following commands should return the same results when all the followers are in sync with the leader:
+
+        echo mntr | nc localhost 2181 | grep zk_synced_followers
+        echo mntr | nc localhost 2181 | grep zk_followers
+
+    If there is an issue during an upgrade, you can rollback using the same steps.
+
+The AdminServer:
+
+    An embedded Jetty-based AdminServer was added in ZooKeeper 3.5.
+
+    The AdminServer is disabled by default in ZooKeeper distributed as part of Confluent Platform. To enable the AdminServer, set admin.enableServer=true in the zookeeper.properties file.
+
+    The AdminServer is enabled by default (on port 8080) in ZooKeeper provided by the Apache Kafka distribution.
+
+Admin Server Configuration:
+
+    New in 3.5.0: The following options are used to configure the AdminServer.
+
+    - admin.enableServer : Set to "false" to disable the AdminServer. By default the AdminServer is enabled.
+    - admin.serverAddress : The address the embedded Jetty server listens on. Defaults to 0.0.0.0.
+    - admin.serverPort : The port the embedded Jetty server listens on. Defaults to 8080.
+    - admin.idleTimeout : Set the maximum idle time in milliseconds that a connection can wait before sending or receiving data. Defaults to 30000 ms.
+    - admin.commandURL : The URL for listing and issuing commands relative to the root URL. Defaults to "/commands".
+
+Four letter words whitelist in ZooKeeper
+
+    Starting in ZooKeeper 3.5.3, the Four Letter Words commands must be explicitly white listed in the zookeeper.4lw.commands.whitelist setting for ZooKeeper server to enable the commands.
+    By default the whitelist only contains the srvr command which zkServer.sh uses. The rest of the Four Letter Words commands are disabled by default.
+
+    An example to whitelist stat, ruok, conf, and isro commands while disabling the rest of Four Letter Words command:
+
+        4lw.commands.whitelist=stat, ruok, conf, isro
+
+    An example to whitelist all Four Letter Words commands:
+
+        4lw.commands.whitelist=*

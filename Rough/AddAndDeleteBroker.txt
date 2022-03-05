@@ -1,0 +1,162 @@
+Adding a New Broker:
+
+1.  Create a VM
+
+2.  Static IP
+
+3.  Add user to Sudoers list
+
+4.  Add hostname to /etc/hosts
+
+5.  Allow CentOS 8 to update by converting CentOS 8 to CentOS 8 Stream
+
+6.  Update the OS
+
+7.  Install Java
+
+8.  Disable Swappiness
+
+9.  Increase the Limits
+
+10. Download Confluent Kafka
+
+11. Update the Server.properties file
+
+12. Download and setup Kafka JMX Exporter for Prometheus
+
+13. Download and setup Jolokia Agent
+
+14. Download and setup Node Exporter
+
+15. Start Kafka Broker and check whether the broker is registering with Zookeeper (Visible in CMAK / Kafka Manager)
+
+16. If everything looks good then stop Kafka broker and set it up as a Service
+
+17. Validate in Zookeeper / ZooNavigator / CMAK (Kafka Manager)
+
+Restarting the Broker without data loss:
+
+1.  Login and check the Kafka service on any one broker node
+
+    sudo systemctl status kafka.service
+
+2.  Stop the kafka service
+
+    sudo systemctl stop kafka.service
+
+3.  Check the Zookeeper, CMAK, Grafana etc to validate the broker is down.
+
+4.  Wait for at least 5 minutes so that the prometheus will trigger an email alert.
+
+5.  Then start the broker
+
+    sudo systemctl start kafka.service
+
+    Check status:
+
+    sudo systemctl status kafka.service
+
+6.  Check the Zookeeper, CMAK, Grafana etc to validate the broker is up after restart.
+
+7.  Broker becoming leader for the partitions it owns
+
+    After restarting the broker, it will first load all partitions it owns from its disk.
+    Wait for the leader election by Zookeeper and then the broker will become the leader for the partitions it own.
+
+    This will take at least 5 minutes to complete (Loading the partitions from Disk and leader election)
+
+    This can be observed in CMAK.
+
+Restarting the Broker with data loss:
+
+1.  Login and check the Kafka service on any one broker node
+
+    sudo systemctl status kafka.service
+
+2.  Stop the kafka service
+
+    sudo systemctl stop kafka.service
+
+3.  Check the Zookeeper, CMAK, Grafana etc to validate the broker is down.
+
+4.  Wait for at least 5 minutes so that the prometheus will trigger an email alert.
+
+5.  Delete the kafka data present under the directory that is set with property logs.dirs from server.properties file
+
+    cat /opt/confluent/configs/server.properties | grep "log.dirs"
+
+    Delete the data from the above location
+
+    sudo rm -rf /opt/confluent/data/kafka
+
+6.  Then start the broker
+
+    sudo systemctl start kafka.service
+
+    Check status:
+
+    sudo systemctl status kafka.service
+
+    Check the data under logs.dir (/opt/confluent/data/kafka)
+
+    sudo ls /opt/confluent/data/kafka
+
+    This will have all the data owned by the broker - this is based on the Replication Factor enabled on the topics
+
+7.  Check the Zookeeper, CMAK, Grafana etc. to validate the broker is up after restart.
+
+8.  Broker becoming leader for the partitions it owns
+
+    After starting the broker, it will first load all partitions it owns from the other brokers based on the replication.
+    Wait for the leader election by Zookeeper and then the broker will become the leader for the partitions it owns.
+
+    This will take at least 5 minutes to complete (Loading the partitions from Disk and leader election)
+
+    This can be observed in CMAK.
+
+Removing the Broker:
+
+    Removing broker is not simply stopping the Kafka Service on the Broker Node. If it is done, then there are issue to re-balance the Cluster.
+
+    So, to remove a broker need to follow two steps:
+
+1.  Re-balance the cluster without involving the broker which needs to be deleted. (For example: 214)
+
+    kafka-assigner script from LinkedIn Kafka Tools can be used to re-balance the cluster.
+
+    Generating the assignments:
+
+    kafka-assigner --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka --generate remove --broker 214
+
+    or
+
+    kafka-assigner -z master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka -g remove -b 214
+
+    Execute the Assignments:
+
+    kafka-assigner --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka --execute remove --broker 214
+
+    or
+
+    kafka-assigner -z master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka -e remove -b 214
+
+2.  Validate whether all the partitions from Broker 214 moved to all others brokers.
+
+    In CMAK, go to the brokers list and click on the broker 214.
+
+    It should not have any partitions.
+
+    If yes then the partitions from broker 214 to other brokers successfully.
+
+    If not wait for sometime for kafka to move all the data from broker 214 to other brokers.(Or disable and enable the cluster)
+
+3.  Stop the Kafka Service in the Broker node (214).
+
+    Stop the service:
+
+    sudo systemctl stop kafka.service
+
+    Check status:
+
+    sudo systemctl status kafka.service
+

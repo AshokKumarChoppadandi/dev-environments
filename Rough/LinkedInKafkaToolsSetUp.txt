@@ -1,0 +1,48 @@
+LinkedIn Kafka Tools Setup:
+
+Reference:
+
+    https://github.com/linkedin/kafka-tools
+
+Pre-requisites:
+
+    1. Install pre-requisites & Python3 (Pip3)
+
+        sudo dnf install gcc openssl-devel gc-c++ python3
+
+    2. Upgrade Pip
+
+        sudo pip3 install --upgrade pip
+
+        or
+
+        pip3 install --upgrade pip --user bigdata
+
+    Checkout the documentation for setting up Python3 & Pip3 in the Rolling Restart Scripts.
+
+    3. Export JAVA_HOME, CONFLUENT_HOME and CONFLUENT / KAFKA binaries to PATH in ~/.bash_profile or /etc/profile
+
+    echo "export JAVA_HOME=/usr/lib/jvm/java" >> /etc/profile
+    echo "export PATH=$PATH:$JAVA_HOME/bin" >> /etc/profile
+    echo "export CONFLUENT_HOME=/usr/local/confluent" >> /etc/profile
+    echo "export PATH=$PATH:$CONFLUENT_HOME/bin" >> /etc/profile
+
+Installing kafka-tools on CentOS 8:
+
+    pip3 install kafka-tools --user bigdata
+
+Usage:
+
+    There are multiple modules available in Kafka Tools and below is the reference for its usage:
+
+    https://github.com/linkedin/kafka-tools/wiki/Kafka-Assigner
+
+Note:
+
+    kafka-assigner will look for the kafka binaries (kafka-reassign-partitions.sh) which are with .sh extension.
+    If Apache Kafka is installed then there will be no issue, but if we have Confluent Kafka installed then kafka-assigner command will not be able to find the binaries because there will be no .sh extension for the script.
+
+    To resolve it, create a soft link:
+
+    sudo ln -s /usr/local/confluent/bin/kafka-reassign-partitions /usr/local/confluent/bin/kafka-reassign-partitions.sh
+

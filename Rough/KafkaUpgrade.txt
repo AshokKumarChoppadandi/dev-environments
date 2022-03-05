@@ -1,0 +1,209 @@
+Kafka Upgrade:
+
+Documentation:
+
+Confluent Kafka - https://docs.confluent.io/platform/current/installation/upgrade.html
+Apache Kafka - https://kafka.apache.org/documentation/#upgrade
+
+How brokers actually work:
+
+INTER BROKER PROTOCOL VERSION (Communication between the brokers)
+
+* Brokers communicate with each other using a Specific Protocol Version.
+* At each Kafka (Broker) Upgrade, brokers use a new protocol version to communicate to other broker.
+* New brokers know about all the protocol versions with the older brokers.
+* Upgrading brokers require to first update the software, then telling all the brokers to use a new protocol version to talk to each other.
+
+MESSAGE FORMAT VERSION
+
+Producer:
+
+* Producer send message in format of the file system to Kafka Broker (broker + Linux OS)
+* Broker directly writes data / message to the File System (Kafka Data (log) files with a specific version) with out doing anything (Zero Copy)
+
+Consumer:
+
+* Broker reads the data from the File System (Kafka Data (log) files with a specific version) without doing anything (Zero Copy)
+* Send the message in format of the file system to the Consumers.
+
+In theory, it is something like:
+
+    The producer is directly writing data to Broker File System &
+    The consumer is directly reading data from the Broker File System
+
+    This is why the Kafka is so fast, because it doesn't do anything with the data / messages.
+
+CLIENT BI-DIRECTIONAL COMPATIBILITY
+
+As of Kafka 0.10.2 (June 2017), the Client and Kafka Brokers have a capability call Bi-Directional Compatibility (because API calls are versioned).
+
+This means:
+
+    * An OLDER client can talk to a NEWER broker.
+    * An NEWER client can talk to a OLDER broker.
+
+Recommended:
+
+    * Always use the latest client library versions if possible.
+    * Kafka Upgrade can be done without breaking the client applications.
+
+ZERO COPY:
+
+ZERO COPY is a Linux Optimization, which allows avoiding context switches and copying data around for applications that transfer a lot of data.
+Kafka has a great performance because of ZERO COPY.
+
+Zero Copy is lost in two cases:
+
+    * SSL Enabled: More RAM is needed to Kafka to perform the SSL Encryption & Decryption.
+    * Older Producer / Consumer running against a broker with a new log message format because of UP & DOWN conversions which has performance impact.
+
+The log format doesn't change often. (last time 0.11)
+
+It is always advised to use / upgrade the clients before upgrading the Kafka Log format version.
+
+UP Conversion:
+
+    * Producer (v0.10) send message in 0.10 format to Kafka Broker (broker v0.11 + Linux OS)
+    * Broker uses memory to convert the Kafka Message from v0.10 to v0.11 (Extra Step) which is called as UP CONVERSION.
+    * After conversion the Message is written to disk (page Cache / file system) with the latest log.format.version=0.11
+
+Down Conversion:
+
+    * Consumer (v0.10) requests message in 0.10 format to Kafka Broker (broker v0.11 + Linux OS)
+    * Broker read message / data from disk (page Cache / file system) with the latest log.format.version=0.11
+    * Broker uses memory to convert the Kafka Message from v0.11 to v0.10 (Extra Step) which is called as DOWN CONVERSION.
+    * After conversion the data / messages are sent to consumer(v0.10)
+
+
+Upgrade Kafka brokers
+
+    * In a rolling upgrade scenario, upgrade one Kafka broker at a time, taking into consideration the recommendations for doing rolling restarts to avoid downtime for end users.
+    * In a downtime upgrade scenario, take the entire cluster down, upgrade each Kafka broker, then start the cluster.
+
+Steps to upgrade for any fix pack release
+
+    Reference: https://docs.confluent.io/platform/6.2.2/installation/upgrade.html#steps-to-upgrade-for-any-fix-pack-release
+
+    Any fix pack release can perform a rolling upgrade (for example, 5.5.3 to 5.5.7) by simply upgrading each broker one at a time.
+
+    To upgrade each broker:
+        * Stop the broker.
+        * Upgrade the software (see below for your packaging type).
+        * Start the broker.
+
+
+    On all Brokers download new version of Kafka (5.5.7)
+
+    wget https://packages.confluent.io/archive/5.5/confluent-5.5.7-2.12.tar.gz
+
+    sudo tar -xzvf confluent-community-5.5.7-2.12.tar.gz -C /usr/local/
+
+    sudo ln -sfn /usr/local/confluent-5.5.7 /usr/local/confluent
+
+    ll /usr/local/
+
+    Then Restart the broker from Admin Machine using Roll Restart Script.
+
+    kafka-rolling-restart --cluster-type kafka --check-count 7
+
+Steps to upgrade previous versions to 6.2.x:
+
+    Reference: https://docs.confluent.io/platform/6.2.2/installation/upgrade.html#steps-for-upgrading-previous-versions-to-version-x
+
+Step 1:
+
+    Update server.properties on all Kafka brokers by modifying the properties inter.broker.protocol.version and log.message.format.version to match the currently installed version (this case it is 2.5):
+
+    ssh bigdata@worker1.bigdata.com
+
+    sudo vi /opt/confluent/configs/server.properties
+
+    i.e.,
+
+        # Kafka Upgrade Properties
+        # Inter Broker Protocol Version
+        inter.broker.protocol.version=2.5
+
+        # Log Message Format Version
+        log.message.format.version=2.5
+
+    Restart the brokers from Admin Machine using Roll Restart Script.
+
+    kafka-rolling-restart --cluster-type kafka --check-count 7
+
+    journalctl -u kafka.service | grep inter.broker.protocol.version
+    journalctl -u kafka.service | grep log.message.format.version
+
+Step 2. Upgrade Kafka Binaries
+
+    ssh bigdata@worker1.bigdata.com
+
+    wget https://packages.confluent.io/archive/6.2/confluent-community-6.2.2.tar.gz
+
+    sudo tar -xzvf confluent-community-6.2.2.tar.gz -C /usr/local/
+
+    sudo ln -sfn /usr/local/confluent-6.2.2 /usr/local/confluent
+
+    ll /usr/local/
+
+    Restart the brokers from Admin Machine using Roll Restart Script.
+
+    kafka-rolling-restart --cluster-type kafka --check-count 7
+
+    Check the kafka version on all the broker:
+
+    kafka-topics --version
+
+Step 3. Change inter broker protocol version
+
+    After all Kafka brokers have been upgraded, make the following update in server.properties:
+
+    inter.broker.protocol.version=2.8
+
+    Restart the brokers from Admin Machine using Roll Restart Script.
+
+    kafka-rolling-restart --cluster-type kafka --check-count 7
+
+    journalctl -u kafka.service | grep inter.broker.protocol.version
+    journalctl -u kafka.service | grep log.message.format.version
+
+Step 4. Upgrade Kafka Clients
+
+    As Admin Machine only has the clients upgrading only on Admin Machine.
+
+    ssh bigdata@adminmachine1.bigdata.com
+
+    wget https://packages.confluent.io/archive/6.2/confluent-community-6.2.2.tar.gz
+
+    sudo tar -xzvf confluent-community-6.2.2.tar.gz -C /usr/local/
+
+    sudo ln -sfn /usr/local/confluent-6.2.2 /usr/local/confluent
+
+    ll /usr/local/
+
+    kafka-topics --version
+
+Step 5. Upgrade message protocol version
+
+    Once all (or most) consumers have been upgraded to 6.2.x, set log.message.format.version=2.8 on each broker.
+
+    ssh bigdata@worker1.bigdata.com
+
+    sudo vi /opt/confluent/configs/server.properties
+
+    i.e.,
+
+    # Kafka Upgrade Properties
+    # Log Message Format Version
+    log.message.format.version=2.5
+
+    Restart the brokers from Admin Machine using Roll Restart Script.
+
+    kafka-rolling-restart --cluster-type kafka --check-count 7
+
+    journalctl -u kafka.service | grep inter.broker.protocol.version
+    journalctl -u kafka.service | grep log.message.format.version
+
+kafka-topics --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --list
+
+kafka-console-consumer --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --topic test --from-beginning

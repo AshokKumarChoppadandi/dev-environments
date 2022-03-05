@@ -1,0 +1,251 @@
+Increasing Replication Factor:
+
+Using Plain JSON Commands and manual process
+
+Step 1:
+
+    Create a topic with 1 replication factor:
+
+    kafka-topics \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --create \
+      --topic test \
+      --replication-factor 1 \
+      --partitions 3
+
+    Describe the Topic:
+
+    kafka-topics \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --describe \
+      --topic test
+
+    Produce sample messages:
+
+    kafka-console-producer \
+      --broker-list worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --topic test
+
+    Consume the messages:
+
+    kafka-console-consumer \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --topic test \
+      --from-beginning
+
+Step 2:
+
+    Create a Topics JSON file for which the replication need to increase like below:
+
+    vi topics-to-increase-replication.json
+
+    {
+      "version": 1,
+      "topics": [
+        {"topic":  "test"}
+      ]
+    }
+
+Step3:
+
+    Generate the Partition Re-assignments using kafka-reassign-partitions command:
+
+    kafka-reassign-partitions \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+      --topics-to-move-json-file topics-to-increase-replication.json \
+      --broker-list "211,212,213" \
+      --generate
+
+    Save the Proposed partition assignment configuration in a json file (ex: increase-topics-replication.json)
+
+    vi increase-topics-replication.json
+
+    {
+      "version":1,
+      "partitions":[
+        {
+          "topic":"test",
+          "partition":1,
+          "replicas":[
+            211
+          ],
+          "log_dirs":[
+            "any"
+          ]
+        },
+        {
+          "topic":"test",
+          "partition":0,
+          "replicas":[
+            213
+          ],
+          "log_dirs":[
+            "any"
+          ]
+        },
+        {
+          "topic":"test",
+          "partition":2,
+          "replicas":[
+            212
+          ],
+          "log_dirs":[
+            "any"
+          ]
+        }
+      ]
+    }
+
+    Now change the replication factor manually, by adding the broker ids in the replicas field like below:
+
+    {
+      "version":1,
+      "partitions":[
+        {
+          "topic":"test",
+          "partition":1,
+          "replicas":[
+            211,
+            212
+          ],
+          "log_dirs":[
+            "any",
+            "any"
+          ]
+        },
+        {
+          "topic":"test",
+          "partition":0,
+          "replicas":[
+            213,
+            211
+          ],
+          "log_dirs":[
+            "any",
+            "any"
+          ]
+        },
+        {
+          "topic":"test",
+          "partition":2,
+          "replicas":[
+            212,
+            213
+          ],
+          "log_dirs":[
+            "any",
+            "any"
+          ]
+        }
+      ]
+    }
+
+Step 4:
+
+    Execute the command to increase / reassign the partitions
+
+    kafka-reassign-partitions \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+      --reassignment-json-file increase-topics-replication.json \
+      --execute
+
+Step 5:
+
+    Verify the partition re-assignment
+
+    kafka-reassign-partitions \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+      --reassignment-json-file increase-topics-replication.json \
+      --verify
+
+Step 6:
+
+    Deprecated:
+
+    kafka-preferred-replica-election \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka
+
+    New:
+    For all topics:
+
+    kafka-leader-election \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --election-type PREFERRED \
+      --all-topic-partitions
+
+    For one topic and one partition:
+
+    kafka-leader-election \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --election-type PREFERRED \
+      --topic test \
+      --partition 0
+
+    kafka-leader-election \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --election-type PREFERRED \
+      --topic test \
+      --partition 1
+
+    kafka-leader-election \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --election-type PREFERRED \
+      --topic test \
+      --partition 2
+
+Step 7:
+
+    Describe the topic
+
+    kafka-topics \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --describe \
+      --topic test
+
+    Consume the messages from the topic
+
+    kafka-console-consumer \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --topic test \
+      --from-beginning
+
+Using kafka-tools from LinkedIn:
+
+Step 1:
+
+    Describe the Topic
+
+    kafka-topics \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --describe \
+      --topic test
+
+Step 2:
+
+    Test the assigner - DRY RUN
+
+    kafka-assigner \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+      --generate set-replication-factor \
+      --topic test \
+      --replication-factor 3
+
+Step 3:
+
+    Execute the assigner / increase the replication factor
+
+    kafka-assigner \
+      --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+      --execute set-replication-factor \
+      --topic test \
+      --replication-factor 3
+
+Step 4:
+
+    Check the description of the Topic
+
+    kafka-topics \
+      --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 \
+      --describe \
+      --topic test
+

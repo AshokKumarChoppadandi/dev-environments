@@ -31,4 +31,4 @@ Updating Configurations using kafka-configs command.
 	# Cluster-wide Config
 	kafka-configs --bootstrap-server bigdata.cluster.broker1:9092,bigdata.cluster.broker2:9092,bigdata.cluster.broker3:9092 --entity-type brokers --entity-default --alter --add-config log.cleaner.threads=2
 
-Note: Check in Zoo Navigator when the kafka-configs are updated
+Note: Check in Zoo Navigator when the kafka-configs are updated (/kafka/config/brokers/<broker_id>/) and default configurations for all brokers are stored under /kafka/config/brokers/<default>
