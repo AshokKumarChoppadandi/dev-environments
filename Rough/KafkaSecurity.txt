@@ -1,0 +1,394 @@
+KAFKA SECURITY:
+
+    1. ENCRYPTION - SSL
+    2. AUTHENTICATION - SSL & SASL
+    3. AUTHORIZATION - ACL
+
+Reasons for having security:
+
+    - Any Clients can access the Kafka Cluster (Anyone can delete the topics)
+        Authentication is required
+    - Clients can produce or consume messages / data from any topic (Anyone can publish the data to Kafka)
+        Authorization is required
+    - Data over the network is visible all over the network from Producer to Kafka Broker (Anyone can intercept the data)
+        Encryption is required
+
+Encryption:
+
+    Encryption in Kafka ensures that the data exchanged between the Clients and Kafka Brokers is secret throughout the network.
+    Similar like an HTTPS Website.
+
+Authentication:
+
+    Authentication in Kafka ensures that only Client that prove their identity can connect to Kafka Cluster.
+    Similar to login (username and password)
+
+    There are two types of Authentication:
+
+    * SSL Authentication: Using SSL Certificates
+
+    * SASL Authentication:
+
+        PLAIN - Username & Password (Weak / Easy Setup)
+        Kerberos - Active Directory (Strong / Hard Setup)
+        SCRAM - Username & Password (Strong / Medium Setup)
+
+Authorization:
+
+    Authorization in Kafka ensures that only the Client which has WRITE or READ permission, only those clientS will be accessing the Kafka Topics.
+
+        ex:
+            Client A can view the data from topic XYZ
+            Client B cannot view the data from topic XYZ
+
+    ACL (Access Control Lists) have to be maintained by administration and onboard new users.
+
+Advantages with Encryption, Authentication and Authorization:
+
+    * Secure communication between Kafka Brokers and Clients
+    * Clients Authentication - Only Authenticated clients access Kafka Cluster
+    * Clients Authorization - Only Authorized clients will read from / write to Kafka Topics.
+
+NOTE:
+    * Kafka Security is available from 0.10 version
+    * Best support for Kafka Security for applications is with JAVA.
+    * Setup security using Command Line & Properties Config files
+
+SSL / SECURE SOCKET LAYER - TLS / TRANSPORT LAYER SECURITY:
+
+    - Encrypts the connection between 2 endpoints for secure data exchange.
+    - It is based on the SSL Certificates
+    - Two ways of using SSL (Kafka can use both):
+        * 1 way verification - ENCRYPTION
+        * 2 way verification - AUTHENTICATION
+
+SSL in KAFKA:
+
+    - SSL in Kafka works for encrypting data between Brokers & Clients.
+    - Kafka Clients will check and trust the certificate of Kafka Broker, and they securely exchange encrypted data.
+    - SSL can also be used for Authentication.
+
+Creating a CERTIFICATE AUTHORITY (CA): Using AdminMachine1 for setting up the Certificate Authority (CA)
+
+Step 1 :
+
+    Login to the Admin machine 1
+
+        ssh bigdata@admin1.bigdata.com
+
+Step 2 :
+
+    Generate the Public and Private Key for CA using the openssl command:
+
+        mkdir ssl && cd ssl/
+
+    Syntax:
+
+        openssl req -new -newkey rsa:<key length rsa bits> -days <Duration - Number of days> -x509 -subj "<Subject Name - Common Name CN>" -keyout <Private Key Output file name> -out <Public key Output file name> -nodes
+
+    Example:
+
+        openssl req -new -newkey rsa:4096 -days 365 -x509 -subj "/CN=Kafka-Security-CA" -keyout ca-key -out ca.cert -nodes
+
+Step 3 :
+
+    The above command creates two files - Private and Public key files
+
+        ll /home/bigdata/ssl/
+
+        cat /home/bigdata/ssl/ca.cert   # Private Key
+
+        cat /home/bigdata/ssl/ca-key    # Public Key
+
+SSL in KAFKA:
+
+This needs to be done on all the Kafka Brokers
+
+Step 1 :
+
+    Configuring the KEYSTORE & TRUSTSTORE for Kafka Brokers
+
+        ssh bigdata@worker1.bigdata.com
+
+        mkdir ssl_server && cd ssl_server/
+
+    Generate JAVA Key Store:
+
+        export SERVER_PASSWORD=serverpassword
+
+        keytool -genkey -keystore kafka.server.keystore.jks -validity 365 -storepass $SERVER_PASSWORD -keypass $SERVER_PASSWORD -dname "CN=worker1.bigdata.com" -storetype pkcs12
+
+    To check / view the Key Store:
+
+        keytool -list -v -keystore kafka.server.keystore.jks    # This requires the above password
+
+    Raising the Certificate Signing Request:
+
+        keytool -keystore kafka.server.keystore.jks -certreq -file cert-file-211 -storepass $SERVER_PASSWORD -keypass $SERVER_PASSWORD
+
+        ll -a
+
+    The Certificate Sign In Request file cert-file will be sent to CA Certificate Authority (In real world, this is sent via an EMail.) And we'll get back the Signed version of Certificate by CA.
+
+        scp cert-file-211 bigdata@admin1.bigdata.com:/home/bigdata/ssl/     # Own CA so that's why copying the request file from Kafka Broker to CA machine.
+
+    The below commands should be executed in Admin Machine (CA)
+    To sign the certificate requested by Kafka Broker:
+
+        export CA_SERVER_PASSWORD=caserverpassword
+
+        openssl x509 -req -CA ca.cert -CAkey ca-key -in cert-file-211 -out cert-signed-211 -days 365 -CAcreateserial -passin pass:$CA_SERVER_PASSWORD
+
+    To check / view the signed certificate:
+
+        keytool -printcert -v -file cert-signed-211
+
+    This signed certificate & CA public key are shared with the Kafka Broker.
+
+        scp cert-signed-211 bigdata@worker1.bigdata.com:/home/bigdata/ssl_server/cert-signed-211
+        scp ca.cert bigdata@worker1.bigdata.com:/home/bigdata/ssl_server/ca.cert
+
+    This signed certificate should be added to the Kafka Broker's truststore
+
+    Creating Kafka Broker's TRUSTSTORE by importing the signed certificate issued by the CA. Now the Kafka Broker will trust all the certificates issued by the same CA
+
+        keytool -keystore kafka.server.truststore.jks -alias CARoot -import -file ca.cert -storepass $SERVER_PASSWORD -keypass $SERVER_PASSWORD -noprompt
+
+    Importing new certificates (signed certificate) in Kafka Broker key store along with the server / broker certificate.
+
+        keytool -keystore kafka.server.keystore.jks -alias CARoot -import -file ca.cert -storepass $SERVER_PASSWORD -keypass $SERVER_PASSWORD -noprompt
+
+        keytool -keystore kafka.server.keystore.jks -import -file cert-signed-211 -storepass $SERVER_PASSWORD -keypass $SERVER_PASSWORD -noprompt
+
+Step 2 :
+
+    Setup Kafka Broker to use SSL on port 9093
+
+    Add SSL protocol properties to the server.properties file:
+
+        listeners=PLAINTEXT://192.168.0.211:9092,SSL://192.168.0.211 :9093
+        advertised.listeners=PLAINTEXT://worker1.bigdata.com:9092,SSL://worker1.bigdata.com:9093
+        ssl.keystore.location=/home/bigdata/ssl_server/kafka.server.keystore.jks
+        ssl.keystore.password=serverpassword
+        ssl.key.password=serverpassword
+        ssl.truststore.location=/home/bigdata/ssl_server/kafka.server.truststore.jks
+        ssl.truststore.password=serverpassword
+
+Step 3 :
+
+    Reboot Kafka Brokers using Rolling Restart Script
+
+Step 4 :
+
+    Verify to reach the Kafka Broker using the SSL Port from the client machine:
+
+        openssl s_client -connect worker1.bigdata.com:9093
+
+SSL Setup for Kafka Clients:
+
+Step 1 :
+
+    Login to Client Machine (Admin Machine 2)
+
+        ssh bigdata@admin2.bigdata.com
+
+    Create a directory to separate it from others:
+
+        mkdir ssl_client && cd ssl_client/
+
+    Copy ca-cert (public key) from Certificate Authority
+
+        export CLIENT_PASSWORD=clientpassword
+
+        scp bigdata@admin1.bigdata.com:/home/bigdata/ssl/ca.cert /home/bigdata/ssl_client/
+
+    Generate TRUSTSTORE for the clients
+
+        keytool -keystore kafka.client.truststore.jks -alias CAClientRoot -import -file ca.cert -storepass $CLIENT_PASSWORD -keypass $CLIENT_PASSWORD -noprompt
+
+    To view the Trust Store file
+
+        keytool -list -v -keystore kafka.client.truststore.jks
+
+
+Step 2 :
+
+    Configure Kafka Client (additional properties) to use the TRUSTSTORE
+
+    vi client.properties
+
+    security.protocol=SSL
+    ssl.truststore.location=/home/bigdata/ssl_client/kafka.client.truststore.jks
+    ssl.truststore.password=clientpassword
+
+Step 3 :
+
+    Test Kafka Clients with Kafka Brokers
+
+    Create a topic:
+
+        kafka-topics --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --create --topic secure-topic-1 --replication-factor 3 --partitions 4
+
+    Produce some messages to Kafka on SSL port
+
+        kafka-console-producer --broker-list worker1.bigdata.com:9093,worker2.bigdata.com:9093,worker3.bigdata.com:9093  --topic secure-topic-1 --producer.config /home/bigdata/ssl_client/client.properties
+
+    Consume messages from Kafka on SSL port
+
+        kafka-console-consumer --bootstrap-server worker1.bigdata.com:9093,worker2.bigdata.com:9093,worker3.bigdata.com:9093 --topic security-topic-1 --from-beginning --consumer.config /home/bigdata/ssl_client/client.properties
+
+Performance impact of SSL in Kafka:
+
+    Using SSL with Kafka Brokers and Clients will affect the performance, for the gain of security.
+
+    Kafka Brokers will need to Encrypt / Decrypt packets / messages:
+        - This will affect the latency
+        - This will affect the CPU Utilization
+        - This will affect the RAM usage of the brokers
+    Kafka Clients will need to Encrypt / Decrypt packets / messages:
+        - This will affect the latency
+        - This will affect the CPU Utilization
+
+SSL Authentication:
+
+    - Currently, only servers have the certificates
+    - These certificates are used to enable encryption
+
+    With SSL, clients can also have certificates
+
+        If the certificate is validated by the broker, the client is authenticated and has an identity (very common Authentication scheme).
+
+    There will be no change at the Kafka Brokers side.
+
+    Here the client should get the signed certificate from CA / Certificate Authority similar to Kafka Brokers.
+
+        - Client send the request to sign the certificate
+        - CA will sign the certificate and send the signed certificated back to Clients
+        - Clients add the signed certificate to its Key Store.
+        - Use them in the client.properties to connect with Kafka Brokers
+
+    Now, the setup became a 2 WAY (MUTUAL) CERTIFICATE CHECKS (Broker will have the Authenticated Client).
+
+    What's changed from SSL Encryption:
+
+    In Encryption case:
+
+        - Only brokers has the singed certificates from CA
+        - The client were verifying the brokers certificates to establish a connection
+        - The client is "ANONYMOUS" to the broker (no identity)
+
+    In Authentication case:
+
+        - The Clients AND Brokers have the signed certificates
+        - The Clients AND Brokers verify each other's certificates
+        - The Clients now has an IDENTITY to the broker (we can apply ACLs)
+
+SSL AUTHENTICATION SETUP:
+
+Step 1 :
+
+    Generate Key Store for Clients
+
+    Login to Client Machine (Admin Machine 2)
+
+        ssh bigdata@admin2.bigdata.com
+
+        cd ssl_client
+
+    Generate the Key Store for Kafka Clients
+
+        export CLIENT_PASSWORD=clientpassword
+
+        keytool -genkey -keystore kafka.client.keystore.jks -validity 365 -storepass $CLIENT_PASSWORD -keypass $CLIENT_PASSWORD -dname "CN=admin2.bigdata.com" -storetype pkcs12
+
+        ll -a
+
+    Raising the Certificate Signing Request:
+
+        keytool -keystore kafka.client.keystore.jks -certreq -file cert-file-client -storepass $CLIENT_PASSWORD -keypass $CLIENT_PASSWORD
+
+        scp cert-file-client bigdata@admin1.bigdata.com:/home/bigdata/ssl/
+
+    The below commands should be executed in Admin Machine1 (CA)
+        To sign the certificate requested by Kafka clients:
+
+            export CA_SERVER_PASSWORD=caserverpassword
+
+            openssl x509 -req -CA ca.cert -CAkey ca-key -in cert-file-client -out cert-signed-client -days 365 -CAcreateserial -passin pass:$CA_SERVER_PASSWORD
+
+        To check / view the signed certificate:
+
+            keytool -printcert -v -file cert-signed-client
+
+        This signed certificate & CA public key are shared with the Kafka Clients.
+
+            scp cert-signed-client bigdata@admin2.bigdata.com:/home/bigdata/ssl_client/cert-signed-client
+            scp ca.cert bigdata@worker1.bigdata.com:/home/bigdata/ssl_server/ca.cert
+
+        This signed certificate should be added to the Kafka Clients's truststore
+
+        Importing new certificates (signed certificate) in Kafka Client key store along with the client certificate.
+
+            keytool -keystore kafka.client.keystore.jks -alias CAClientRoot -import -file ca.cert -storepass $CLIENT_PASSWORD -keypass $CLIENT_PASSWORD -noprompt
+
+            keytool -keystore kafka.client.keystore.jks -import -file cert-signed-client -storepass $CLIENT_PASSWORD -keypass $CLIENT_PASSWORD -noprompt
+
+Step 2 :
+
+    Configure Broker to require SSL Authentication
+
+    ssh bigdata@worker1.bigdata.com
+
+    vi /opt/confluent/configs/server.properties
+
+        ssl.client.auth=required
+
+Step 3 :
+
+    Restart the brokers using Rolling Restart Script
+
+Step 3 :
+
+    Test the SSL Authentication Setup from Client Machine (admin2.bigdata.com)
+
+    vi client-ssl-auth.properties
+
+    security.protocol=SSL
+    ssl.truststore.location=/home/bigdata/ssl_client/kafka.client.truststore.jks
+    ssl.truststore.password=clientpassword
+    ssl.keystore.location=/home/bigdata/ssl_client/kafka.client.keystore.jks
+    ssl.keystore.password=clientpassword
+    ssl.key.password=clientpassword
+
+    Create a topic:
+
+        kafka-topics --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --create --topic secure-topic-2 --replication-factor 3 --partitions 5
+
+    Produce some messages to Kafka on SSL port with Authentication
+
+        kafka-console-producer --broker-list worker1.bigdata.com:9093,worker2.bigdata.com:9093,worker3.bigdata.com:9093  --topic secure-topic-2 --producer.config /home/bigdata/ssl_client/client-ssl-auth.properties
+
+    Consume messages from Kafka on SSL port with Authentication
+
+        kafka-console-consumer --bootstrap-server worker1.bigdata.com:9093,worker2.bigdata.com:9093,worker3.bigdata.com:9093 --topic secure-topic-2 --from-beginning --consumer.config /home/bigdata/ssl_client/client-ssl-auth.properties
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
