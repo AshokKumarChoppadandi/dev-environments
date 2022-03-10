@@ -1,0 +1,1132 @@
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+# -----------------------------------
+
+# Defining the Index Lifecycle Policy
+
+PUT _ilm/policy/apache-logs-ilm-policy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "min_age": "1d",
+        "actions": {
+          "set_priority": {
+            "priority": 100
+          },
+          "rollover": {
+            "max_age": "7d",
+            "max_docs": 30000,
+            "max_size": "5gb"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "8d",
+        "actions": {
+          "set_priority": {
+            "priority": 50
+          },
+          "allocate": {
+            "number_of_replicas": 1,
+            "include": {
+              "_name": "",
+              "_ip": ""
+            },
+            "exclude": {
+              "_name": "",
+              "_ip": ""
+            },
+            "require": {
+              "_name": "",
+              "_ip": ""
+            }
+          },
+          "shrink": {
+            "number_of_shards": 2
+          },
+          "forcemerge": {
+            "max_num_segments": 3
+          }
+        }
+      },
+      "cold": {
+        "min_age": "30d",
+        "actions": {
+          "set_priority": {
+            "priority": 0
+          },
+          "allocate": {
+            "number_of_replicas": 1,
+            "include": {
+              "_name": "",
+              "_ip": ""
+            },
+            "exclude": {
+              "_name": "",
+              "_ip": ""
+            },
+            "require": {
+              "_name": "",
+              "_ip": ""
+            }
+          }
+        }
+      },
+      "delete": {
+        "min_age": "90d",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}
+
+# Creating the component template for Mappings 
+
+PUT _component_template/apache-logs-mappings1
+{
+  "template": {
+    "mappings": {
+      "properties": {
+        
+        "@timestamp": {
+          "type": "date",
+          "format": "date_optional_time||epoch_millis"
+        },
+        "http.response.body.bytes": {
+          "type": "integer"
+        },
+        "clientip.geo.location": {
+          "type": "geo_point"
+        }
+      }
+    }
+  }
+}
+
+# Creating the component template for Settings
+
+PUT _component_template/apache-logs-settings1
+{
+  "template": {
+    "settings": {
+      
+      "number_of_shards": "3",
+      "number_of_replicas": 2, 
+      "index.lifecycle.name": "apache-logs-ilm-policy"
+    }
+  },
+  "_meta": {
+    "description": "Apache Logs Settings and ILM",
+    "details": "Using the apache-logs-ilm-policy"
+  }
+}
+
+# Creating the Index template to use the Apache Logs ILM, Mappings and settings
+
+PUT _index_template/latest-apache-logs-index-template
+{
+  "index_patterns": ["latest-apache-logs-stream*"],
+  "data_stream": {},
+  "composed_of": ["apache-logs-mappings1", "apache-logs-settings1"],
+  "priority": 1000,
+  "_meta": {
+    "decription": "Index Template for apache logs123",
+    "details": "Apache Logs index template using Apache Logs ILM, Mappings and Settings"
+  }
+}
+
+GET _index_template/latest-apache-logs-index-template
+
+GET _data_stream/latest-apache-logs-stream
+
+GET _data_stream/_stats
+
+GET _cat/indices?v=true
+
+GET _cat/shards/.ds-latest-apache-logs-stream-2022.02.24-000001?v=true
+
+GET .ds-latest-apache-logs-stream-*/_count
+
+GET .ds-latest-apache-logs-stream-2022.02.24-000001/_count
+
+GET .ds-latest-apache-logs-stream-2022.03.04-000002/_count
+
+
+GET .ds-latest-apache-logs-stream-2022.02.24-000001/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+DELETE /_data_stream/new-apache-logs-stream
+
+DELETE .ds-new-apache-logs-stream-2014.09.05-2022.02.24-000001
+
+
+# Delete the Stream or the backing indices
+
+# Updating the template was not reflected
+
+
+
+GET cars/_search
+
+GET cars_reindex/_search
+
+
+POST _reindex
+{
+  "source": {
+    "index": "cars",
+    "_source": ["make", "color"]
+  },
+  "dest": {
+    "index": "cars_reindex"
+  }
+}
+
+
+
+
+
+
+
+
+# -----------------------------------
+
+
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "std_english": { 
+          "type":      "standard",
+          "stopwords": "_english_"
+        }
+      }
+    }
+  },
+  "mappings": {
+    
+      "properties": {
+        "my_text": {
+          "type":     "text",
+          "analyzer": "standard", 
+          "fields": {
+            "english": {
+              "type":     "text",
+              "analyzer": "std_english" 
+            }
+          }
+        }
+      }
+    
+  }
+}
+
+
+
+
+
+POST my_index/_analyze
+{
+  "field": "my_text", 
+  "text": "The old brown cow jumped in new delhi for 200 $"
+}
+
+
+POST my_index/_analyze
+{
+  "field": "my_text.english", 
+  "text": "The old brown cow jumped in new delhi for 200 $"
+}
+
+
+PUT /my_index1
+{
+ "settings": {
+"analysis": {
+"char_filter": {
+"$_to_doller": {
+"type": "mapping",
+"mappings": [ "$ => doller"]
+}},
+"filter": {
+"my_stopwords": {
+"type": "stop",
+"stopwords": [ "the", "a" ]
+}},
+"analyzer": {
+"my_analyzer": {
+"type": "custom",
+"char_filter": [ "html_strip", "$_to_doller" ],
+"tokenizer": "standard",
+"filter": [ "lowercase", "my_stopwords" ]
+}}
+}
+}
+} 
+
+POST my_index1/_analyze
+{
+  "field": "my_text11", 
+  "text": "<h1>The old brown cow <h2>jumped in new delhi for 200 $"
+}
+
+POST my_index1/_analyze
+{
+  "field": "my_text11", 
+  "text": "<h1>The old brown cow <h2>jumped in new delhi for 200 $",
+  "analyzer": "my_analyzer"
+}
+
+PUT /my_index3/
+{
+"settings": {
+  "analysis": {
+"char_filter": {
+"$_to_doller": {
+"type": "mapping",
+"mappings": [ "$ => doller"]
+}},
+"filter": {
+"my_stopwords": {
+"type": "stop",
+"stopwords": [ "the", "a" ]
+}},
+"analyzer": {
+"my_analyzer": {
+"type": "custom",
+"char_filter": [ "html_strip", "$_to_doller" ],
+"tokenizer": "standard",
+"filter": [ "lowercase", "my_stopwords","snowball" ]
+}}
+}
+}   
+
+}
+
+
+POST my_index3/_analyze
+{
+  "field": "my_text11", 
+  "text": "<h1>The old brown cow <h2>jumped in new delhi for 200 $",
+  "analyzer": "my_analyzer"
+}
+
+
+PUT /ngramtest
+{
+"settings" : {
+"analysis" : {
+"analyzer" : {
+"my_analyzer" : {
+"tokenizer" : "standard",
+"filter" : [ "lowercase", "my_edgengram_filter" ]
+}
+},
+"filter" : {
+"my_edgengram_filter" : {
+"type" : "edge_ngram",
+"min_gram" :2,
+"max_gram" : 6
+}
+}
+}
+}
+}
+
+
+GET ngramtest/_analyze 
+{
+  "analyzer": "my_analyzer", 
+  "text":     "The quick fox in New Delhi jumped"
+}
+
+
+PUT ngramtest/_doc/1
+{
+  "text":     "The quick fox in New Delhi jumped"
+}
+
+
+GET /ngramtest/_search
+{
+    "query": {
+        "fuzzy": {
+            "text": {
+                "value": "daldi",
+                "fuzziness": 2,
+                "max_expansions": 50,
+                "prefix_length": 1,
+                "transpositions": true,
+                "rewrite": "constant_score"
+            }
+        }
+    }
+}
+
+
+PUT /_template/template_1
+{
+   "aliases": {
+     "logalias": {}
+   }, 
+    "index_patterns": ["indexing*"], 
+    "order" : 0,
+    "settings" : {
+        "number_of_shards" : 3,
+	  "number_of_replicas" : 2
+    },
+   "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "empname": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+PUT indexing1
+ 
+GET  indexing1/_settings
+
+GET indexing1/_mapping
+
+PUT logalias/_doc/1
+{
+  "empname": "Mukesh kumar Shukla"
+   
+}
+
+
+PUT /_template/template_2
+{
+     "aliases": {
+     "logalias": {}
+   }, 
+    "index_patterns": ["index*"], 
+    "order" : 1,
+    "settings" : {
+        "number_of_shards" : 2
+    }   
+}
+
+PUT indexing2
+
+GET indexing2/_settings
+
+GET indexing2/_mapping
+
+GET demo2/_search
+{
+  "query": {"wildcard": {
+    "description": "*high"
+    }
+  }}
+  
+ PUT my_index/_doc/1?refresh
+{
+  "text": "quick brown fox",
+  "popularity": 1
+}
+
+PUT my_index/_doc/2?refresh
+{
+  "text": "quick fox",
+  "popularity": 5
+}
+
+GET my_index/_search
+{
+  "query": {
+    "function_score": {
+      "query": {
+        "match": {
+          "text": "quick brown fox"
+        }
+      },
+      "script_score": {
+        "script": {
+          "lang": "expression",
+          "source": "_score * doc['popularity']"
+        }
+      },
+	  "boost_mode":"replace"
+    }
+  }
+}
+
+
+
+
+
+
+
+PUT _ilm/policy/my-lifecycle-policy1
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": {
+            "max_primary_shard_size": "50gb"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "30d",
+        "actions": {
+          "shrink": {
+            "number_of_shards": 1
+          },
+          "forcemerge": {
+            "max_num_segments": 1
+          }
+        }
+      },
+      "cold": {
+        "min_age": "60d",
+        "actions": {
+        
+        }
+      },
+    
+      "delete": {
+        "min_age": "735d",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}
+
+
+PUT _component_template/my-mappings1
+{
+  "template": {
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date",
+          "format": "date_optional_time||epoch_millis"
+        },
+        "message": {
+          "type": "wildcard"
+        }
+      }
+    }
+  },
+  "_meta": {
+    "description": "Mappings for @timestamp and message fields",
+    "my-custom-meta-field": "More arbitrary metadata"
+  }
+}
+
+PUT _component_template/my-settings1
+{
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "my-lifecycle-policy1"
+    }
+  },
+  "_meta": {
+    "description": "Settings for ILM",
+    "my-custom-meta-field": "More arbitrary metadata"
+  }
+}
+
+
+PUT _index_template/my-index-template1
+{
+  "index_patterns": ["my-data1-stream*"],
+  "data_stream": { },
+  "composed_of": [ "my-mappings1", "my-settings1" ],
+  "priority": 500,
+  "_meta": {
+    "description": "Template for my time series data",
+    "my-custom-meta-field": "More arbitrary metadata"
+  }
+}
+
+PUT my-data1-stream1/_bulk
+{ "create":{ } }
+{ "@timestamp": "2099-05-06T16:21:15.000Z", "message": "192.0.2.42 - - [06/May/2099:16:21:15 +0000] \"GET /images/bg.jpg HTTP/1.0\" 200 24736" }
+{ "create":{ } }
+{ "@timestamp": "2099-05-06T16:25:42.000Z", "message": "192.0.2.255 - - [06/May/2099:16:25:42 +0000] \"GET /favicon.ico HTTP/1.0\" 200 3638" }
+
+
+
+POST my-data1-stream1/_doc
+{
+  "@timestamp": "2099-05-06T16:21:15.000Z",
+  "message": "192.0.2.42 - - [06/May/2099:16:21:15 +0000] \"GET /images/bg.jpg HTTP/1.0\" 200 24736"
+}
+
+POST my-data1-stream1/_doc/
+{
+  "@timestamp": "2099-03-08T11:06:07.000Z",
+  "user": {
+    "id": "8a4f500d"
+  },
+  "message": "Login successful"
+}
+
+PUT /my-data1-stream1/_bulk?refresh
+{"create":{ }}
+{ "@timestamp": "2099-03-08T11:04:05.000Z", "user": { "id": "vlb44hny" }, "message": "Login attempt failed" }
+{"create":{ }}
+{ "@timestamp": "2099-03-08T11:06:07.000Z", "user": { "id": "8a4f500d" }, "message": "Login successful" }
+{"create":{ }}
+{ "@timestamp": "2099-03-09T11:07:08.000Z", "user": { "id": "l7gk7f82" }, "message": "Logout successful" }
+
+
+GET /_data_stream/my-data1-stream1/_stats?human=true
+
+
+POST /my-data1-stream1/_rollover/
+
+
+POST /my-data1-stream1/_doc/
+{
+  "@timestamp": "2099-03-08T11:06:07.000Z",
+  "user": {
+    "id": "8a4f500d"
+  },
+  "message": "Login successful for Mukesh"
+}
+
+GET  my-data1-stream1/_search
+
+
+
+
+
+POST /cars/_bulk
+{ "index": {}}
+{ "price" : 10000, "color" : "red", "make" : "honda", "sold" : "2014-10-28" }
+{ "index": {}}
+{ "price" : 20000, "color" : "red", "make" : "honda", "sold" : "2014-11-05" }
+{ "index": {}}
+{ "price" : 30000, "color" : "green", "make" : "ford", "sold" : "2014-05-18" }
+{ "index": {}}
+{ "price" : 15000, "color" : "blue", "make" : "toyota", "sold" : "2014-07-02" }
+{ "index": {}}
+{ "price" : 12000, "color" : "green", "make" : "toyota", "sold" : "2014-08-19" }
+{ "index": {}}
+{ "price" : 20000, "color" : "red", "make" : "honda", "sold" : "2014-11-05" }
+{ "index": {}}
+{ "price" : 80000, "color" : "red", "make" : "bmw", "sold" : "2014-01-01" }
+{ "index": {}}
+{ "price" : 25000, "color" : "blue", "make" : "ford", "sold" : "2014-02-12" }
+
+
+
+
+
+
+GET cars/_search
+{
+  "query": {"bool": {
+    "must": [
+      {"match": {
+        "color.keyword": "red"
+      }},{"match": {
+        "make.keyword": "honda"
+      }}
+    ]
+  }}
+}
+
+
+GET .kibana/_search
+
+
+GET .kibana/_search
+{
+  "query": {"match": {
+    "type": "visualization"
+  }}
+}
+
+PUT my_index35
+{
+  "mappings": {
+    "properties": {
+      "my_join_field": {
+        "type": "join",
+        "relations": {
+          "question": ["answer"]  
+        }
+      }
+    }
+  }
+}
+
+
+PUT my_index35/_doc/10?refresh
+{
+  "text": "This is a question as asked by the trainer",
+  "my_join_field": {
+    "name": "question" 
+  }
+}
+
+PUT my_index35/_doc/20?refresh
+{
+  "text": "This is a another question asked by the trainer Mukesh",
+  "my_join_field": {
+    "name": "question"
+  }
+}
+
+
+PUT my_index35/_doc/30?routing=10?refresh 
+{
+  "detail": "This is an answer given to the trainer",
+  "my_join_field": {
+    "name": "answer", 
+    "parent": "10" 
+  }
+}
+
+
+
+PUT my_index35/_doc/40?routing=10&refresh
+{
+  "detail": "This is another answer given to the question asked by the trainer",
+  "my_join_field": {
+    "name": "answer",
+    "parent": "10"
+  }
+}
+
+GET my_index35/_search
+{
+  "query": {"has_child": {
+    "type": "answer",
+    "query": {"match": {
+      "detail": "another"
+    }}
+  }}
+}
+
+GET my_index35/_search
+{
+  "query": {"has_parent": {
+    "parent_type": "question",
+    "query": {"match": {
+      "text": "trainer"
+    }}
+  }}
+}
+
+
+
+# faltten
+# user.firstname: [Mukesh,Mahesh]
+# user.lastname: [shukla,ambani]
+
+PUT my_index31
+{
+  "mappings": {
+      "properties": {
+        "user": {
+          "type": "nested" 
+        }
+      }
+    }
+}
+
+PUT my_index31/_doc/1
+{
+  "name": "ABC",
+  "user" : [{"fistname": "Mukesh","lastname": "Shukla"},{"fistname": "Mahesh","lastname": "Ambani"}]
+}
+
+
+GET my_index31/_search
+{
+  "query": {
+    
+        "bool": {
+          "must": [
+            { "match": { "user.fistname": "Mukesh" }},
+            { "match": { "user.lastname":  "Ambani" }} 
+          ]
+        }
+      }
+    
+  
+}
+
+
+GET my_index31/_search
+{
+  "query": {
+    "nested": {
+      "path": "user",
+      "query": {
+        "bool": {
+          "must": [
+            { "match": { "user.fistname": "Mukesh" }},
+            { "match": { "user.lastname":  "Shukla" }} 
+          ]
+        }
+      }
+     
+    }
+    
+  }
+}
+
+
+GET my_index31/_search
+{
+  "query": {
+    "nested": {
+      "path": "user",
+      "query": {
+        "bool": {
+          "must": [
+            { "match": { "user.fistname": "Mukesh" }},
+            { "match": { "user.lastname":  "Shukla" }} 
+          ]
+        }
+      },
+      "inner_hits": {}
+     
+    }
+    
+  }
+}
+
+
+GET my_index31/_search?_source_excludes=user,name
+{
+  "query": {
+    "nested": {
+      "path": "user",
+      "query": {
+        "bool": {
+          "must": [
+            { "match": { "user.fistname": "Mukesh" }},
+            { "match": { "user.lastname":  "Shukla" }} 
+          ]
+        }
+      },
+      "inner_hits": {}
+     
+    }
+    
+  }
+}
+
+
+GET my_index31/_search?_source_includes=name
+{
+  "query": {
+    "nested": {
+      "path": "user",
+      "query": {
+        "bool": {
+          "must": [
+            { "match": { "user.fistname": "Mukesh" }},
+            { "match": { "user.lastname":  "Shukla" }} 
+          ]
+        }
+      },
+      "inner_hits": {}
+     
+    }
+    
+  }
+}
+
+
+GET cars/_search
+{
+  "aggs": {
+    "2": {
+      "terms": {
+        "field": "make.keyword",
+        "order": {
+          "1": "desc"
+        },
+        "size": 5
+      },
+      "aggs": {
+        "1": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  },
+  "size": 0,
+  "fields": [
+    {
+      "field": "sold",
+      "format": "date_time"
+    }
+  ],
+  "script_fields": {},
+  "stored_fields": [
+    "*"
+  ],
+  "runtime_mappings": {},
+  "_source": {
+    "excludes": []
+  },
+  "query": {
+    "bool": {
+      "must": [],
+      "filter": [
+        {
+          "range": {
+            "sold": {
+              "format": "strict_date_optional_time",
+              "gte": "2013-12-31T18:30:00.000Z",
+              "lte": "2022-02-18T08:53:42.698Z"
+            }
+          }
+        }
+      ],
+      "should": [],
+      "must_not": []
+    }
+  }
+}
+
+GET _cat/indices
+
+GET log-2021.12.29/_search
+
+GET log-2022.02.18/_search
+
+
+POST _ingest/pipeline/_simulate
+{
+  "pipeline" : {
+"processors" : [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": ["%{COMBINEDAPACHELOG}"]
+      }
+    },
+    {
+      "geoip": {
+        "field": "clientip"
+      }
+    }
+  ]
+  },
+  "docs": [
+    {
+      "_source": {
+        "message": "104.194.203.69 - - [01/Apr/2017:16:21:15 +0000] \"GET /favicon.ico HTTP/1.1\" 200 3638 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36\""
+      }
+    }
+  ]
+}
+
+GET apache-1-logs-2022.02.18/_search
+{
+  "query": {"bool": {"must_not": [
+    {"match": {
+      "source.address.keyword": "24.236.252.67"
+    }}
+  ]}}
+}
+
+GET apache-1-logs-2014.08.27/_search
+{
+  "query": {"bool": {"must": [
+    {"match": {
+      "source.address": "24.236.252.67"
+    }}
+  ]}}
+}
+
+GET _cat/indices
+
+GET apache-3-logs-2022.02.19/_search
+
+DELETE apache-3-logs-2022.02.19
+
+GET apache-2-logs-2014.09.03/_search
+
+DELETE apache-2-logs-2014.09.03
+
+GET apache-logs-2-2014.09.03/_search
+
+GET apache-logs-2-2014.09.03/_count
+
+GET apache-logs-2-2014.09.*/_count
+
+# Geo Point Example:
+
+DELETE _template/apache-logs-3-template
+
+PUT _template/apache-logs-3-template
+{
+  "index_patterns": "apache-logs-3-*",
+  "order": 1,
+  "settings": {
+    "number_of_shards": 2,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "bytes": {
+        "type": "integer"
+      },
+      "response": {
+        "type": "integer"
+      },
+      "geo.location": {
+        "type": "geo_point"
+      }
+    }
+  }
+}
+
+
+PUT _template/apache-logs-4-template
+{
+  "index_patterns": "apache-logs-4-*",
+  "order": 1,
+  "settings": {
+    "number_of_shards": 2,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "http.response.body.bytes": {
+        "type": "integer"
+      },
+      "clientip.geo.location": {
+        "type": "geo_point"
+      }
+    }
+  }
+}
+
+
+
+GET apache-logs-4-*/_count
+
+GET apache-logs-3-*/_search
+
+GET apache-logs-3-2014.08.27/_mapping
+
+
+
+GET apache-logs-3-*/_search
+{
+  "query": {
+    "range": {
+      "http.response.body.bytes": {
+        "gte": 10,
+        "lte": 20000
+      }
+    }
+  }
+}
+
+
+GET _cat/indices
+
+GET filebeat-apache-logs-2014.08.27/_count
+
+
+
+
+PUT _ingest/pipeline/my-pipeline-id-123
+{
+  "description" : "describe pipeline",
+  "version" : 123,
+  "processors" : [
+    {
+      "set" : {
+        "field": "orgname",
+        "value": "Epsilon India Private Limited"
+      }
+    },
+    {
+      "grok": {
+        "field": "message",
+        "patterns": ["%{COMBINEDAPACHELOG}"]
+        }
+    },
+    {
+      "date": {
+        "field": "timestamp",
+        "formats": ["dd/MMM/YYYY:HH:mm:ss Z"]
+      }
+    }
+  ]
+}
+
+PUT _ingest/pipeline/my-pipeline-id-456
+{
+  "description" : "describe pipeline",
+  "version" : 123,
+  "processors" : [
+    {
+      "set" : {
+        "field": "orgname",
+        "value": "Epsilon India Private Limited"
+      }
+    },
+    {
+      "grok": {
+        "field": "message",
+        "patterns": ["%{COMBINEDAPACHELOG}"]
+        }
+    }
+  ]
+}
+
+PUT _ingest/pipeline/my-pipeline-id-789
+{
+  "description" : "describe pipeline",
+  "version" : 789,
+  "processors" : [
+    {
+      "set" : {
+        "field": "orgname",
+        "value": "Epsilon India Private Limited"
+      }
+    },
+    {
+      "grok": {
+        "field": "message",
+        "patterns": ["%{HAPROXYDATE:eventtimestamp} %{IP:ip} %{GREEDYDATA:servermsg}"]
+        }
+    }
+  ]
+}
+
+
+
+
+GET _cat/indices?v=true
+
+GET .ds-filebeat-8.0.0-2022.02.22-000001/_search
+
+
