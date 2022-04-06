@@ -1,0 +1,82 @@
+My Personal Cluster Setup in Dell Poweredge T630 using VMWare ESXi
+
+Hosts and IPs
+
+master1.bigdata.com     192.168.0.201
+master2.bigdata.com     192.168.0.202
+master3.bigdata.com     192.168.0.203
+worker1.bigdata.com     192.168.0.211
+worker2.bigdata.com     192.168.0.212
+worker3.bigdata.com     192.168.0.213
+worker3.bigdata.com     192.168.0.214
+admin1.bigdata.com      192.168.0.111
+admin2.bigdata.com      192.168.0.112
+dockermanchine1.bigdata.com     192.168.0.231
+
+
+Users & Passwords
+
+master1.bigdata.com
+
+    root        Master@123
+    bigdata     Bigdata@123
+
+master2.bigdata.com
+
+    root        Master@123
+    bigdata     Bigdata@123
+
+master3.bigdata.com
+
+    root        Master@123
+    bigdata     Bigdata@123
+
+worker1.bigdata.com
+
+    root        Worker@123
+    bigdata     Bigdata@123
+
+worker2.bigdata.com
+
+    root        Worker@123
+    bigdata     Bigdata@123
+
+worker3.bigdata.com
+
+    root        Worker@123
+    bigdata     Bigdata@123
+
+worker4.bigdata.com
+
+    root        Worker@123
+    bigdata     Bigdata@123
+
+admin1.bigdata.com
+
+    root        Admin@123
+    bigdata     Bigdata@123
+
+admin2.bigdata.com
+
+    root        Admin@123
+    bigdata     Bigdata@123
+
+dockermanchine1.bigdata.com
+
+    root        Docker@123
+    bigdata     Bigdata@123
+
+Hosts & Services:
+
+master1.bigdata.com                 Zookeeper1
+master2.bigdata.com                 Zookeeper2
+master3.bigdata.com                 Zookeeper3
+worker1.bigdata.com                 Broker 201
+worker2.bigdata.com                 Broker 202
+worker3.bigdata.com                 Broker 203
+worker3.bigdata.com                 Broker 204
+admin1.bigdata.com                  Admin Tools (Kafka Rolling Restart, YELP Tools, Kafka Utils) & CA, KDC & Kerberos Admin Server
+admin2.bigdata.com                  SSL Clients, Kerberos Clients
+dockermanchine1.bigdata.com         Docker Services (Prometheus, ZooNavigator, AlertManager, CMAK, Grafana)
+
+

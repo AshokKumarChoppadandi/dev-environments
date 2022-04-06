@@ -26,6 +26,7 @@
         <module>Elasticsearch</module>
         <module>Kibana</module>
         <module>Logstash</module>
+        <module>HadoopHiveAtlasHook</module>
     </modules>
 
     <properties>

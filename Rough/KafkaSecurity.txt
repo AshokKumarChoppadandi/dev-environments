@@ -347,7 +347,7 @@ Step 3 :
 
     Restart the brokers using Rolling Restart Script
 
-Step 3 :
+Step 4 :
 
     Test the SSL Authentication Setup from Client Machine (admin2.bigdata.com)
 
@@ -372,6 +372,948 @@ Step 3 :
 
         kafka-console-consumer --bootstrap-server worker1.bigdata.com:9093,worker2.bigdata.com:9093,worker3.bigdata.com:9093 --topic secure-topic-2 --from-beginning --consumer.config /home/bigdata/ssl_client/client-ssl-auth.properties
 
+SASL AUTHENTICATION - KERBEROS / GSSAPI IN KAFKA:
+
+    SASL allows the clients by authenticating using Kerberos (SASL GSSAPI).
+
+    SASL - Simple Authentication and Security Layer
+
+    It's becoming a standard in the bigdata applications for security (Hadoop, Kafka, etc.,)
+
+    The reason it's popular is that it does not change the application protocol and theoretically one SASL ticket can give access to many systems.
+
+    SASL is usually combined with SSL / TLS for adding an encryption layer.
+
+SASL in Kafka:
+
+SASL in Kafka currently implements the following protocols:
+
+    - PLAIN (Simple Username and Password)
+    - SCRAM (Modern Username and Password with challenge)
+    - GSSAPI (Kerberos Authentication / Active Directory Authentication)
+
+NOTE: SASL / GSSAPI is the most frequent one today and the most complicated.
+
+What is KERBEROS
+
+    - A protocol for Authentication over (unsecured) networks
+    - Data Exchange is encrypted
+    - Based on tickets issued to Service Principals (A user is also a service in Kerberos)
+    - Involves a trusted 3rd-party (KDC / Key Distribution Center) - maintains the Service Principal Database
+    - Created at MIT
+
+    - Microsoft Active Directory is the most popular implementation of Kerberos
+    - The free implementation is the one provided by MIT
+
+Authentication Workflow:
+
+    The workflow involves mainly 3 components:
+
+        1. Client
+        2. Kerberos KDC / Key Distributed Center
+        3. Kafka (Brokers)
+
+    Workflow:
+
+        1. Client sends a request(Keytab) to authenticate to KDC.
+        2. Authentication Server in KDC authenticates and sends the acknowledgement.
+        3. If Client is authenticated, the Client sends a request for New Ticket to the Ticket Granting Server in KDC
+        4. The Ticket Granting Server generates a new ticket (which helps in accessing Kafka) and sends back to Client
+        5. Client uses ticket for accessing Kafka temporarily.
+
+    Note:
+        - If the ticket expires, the client will again request the KDC to generate a new ticket.
+
+Key characteristics:
+
+    - All communication is encryption
+    - No passwords are being sent over the wire
+    - Tickets do expire, hence keep the servers time in Sync
+    - The Clients will automatically renew tickets as long as their credentials are valid
+
+Note: Only clients interact with the KDC, the target service / server will NEVER talk to the KDC.
+
+Important points:
+
+    - Kerberos is very complicated
+    - There are as many Kerberos Setups as Enterprises.
+    - Kerberos error are CRYPTIC
+
+Setting up SASL Authentication using Kerberos:
+
+Installing Kerberos
+
+Note: For this setup admin1.bigdata.com host is used for setting up Kerberos
+
+    ssh bigdata@admin1.bigdata.com
+
+Step 1 : Install MIT Kerberos
+
+    sudo dnf install krb5-server krb5-libs -y
+
+    Configuration settings:
+
+    kdc.conf
+    ========
+
+    sudo vi /var/kerberos/krb5kdc/kdc.conf
+
+    [kdcdefaults]
+        kdc_ports = 88
+        kdc_tcp_ports = 88
+        default_realm = KAFKA.SECURE
+
+    [realms]
+        KAFKA.SECURE = {
+        #master_key_type = aes256-cts
+        acl_file = /var/kerberos/krb5kdc/kadm5.acl
+        dict_file = /usr/share/dict/words
+        admin_keytab = /var/kerberos/krb5kdc/kadm5.keytab
+        supported_enctypes = aes256-cts:normal aes128-cts:normal arcfour-hmac:normal camellia256-cts:normal camellia128-cts:normal
+    }
+
+    kadm5.acl
+    =========
+
+    sudo vi /var/kerberos/krb5kdc/kadm5.acl
+
+    */admin@KAFKA.SECURE    *
+
+    krb5.conf
+    =========
+
+    sudo vi /etc/krb5.conf
+
+    # To opt out of the system crypto-policies configuration of krb5, remove the
+    # symlink at /etc/krb5.conf.d/crypto-policies which will not be recreated.
+    includedir /etc/krb5.conf.d/
+
+    [logging]
+        default = FILE:/var/log/krb5libs.log
+        kdc = FILE:/var/log/krb5kdc.log
+        admin_server = FILE:/var/log/kadmind.log
+
+    [libdefaults]
+        dns_lookup_realm = false
+        ticket_lifetime = 24h
+        kdc_timesync = 1
+        renew_lifetime = 7d
+        forwardable = true
+        rdns = false
+        pkinit_anchors = FILE:/etc/pki/tls/certs/ca-bundle.crt
+        # spake_preauth_groups = edwards25519
+        default_realm = KAFKA.SECURE
+        default_ccache_name = KEYRING:persistent:%{uid}
+
+    [realms]
+        KAFKA.SECURE = {
+            kdc = admin1.bigdata.com
+            admin_server = admin1.bigdata.com
+        }
+
+    [domain_realm]
+    # .example.com = EXAMPLE.COM
+    # example.com = EXAMPLE.COM
+
+    Creating the Kerberos Database:
+
+    sudo /usr/sbin/kdb5_util create -s -r KAFKA.SECURE -P kerberos-db-password
+
+    -s => This creates a STASH file (Master Principal is stored)
+    -r => REALM name
+
+    Creating the Admin Principal
+
+    sudo kadmin.local -q "add_principal -pw kerberos-db-password admin/admin"
+
+    -q => Query
+    add_principal => Adding a principal
+    -pw => Password
+    admin/admin => Principal name
+
+Step 2 : Start Kerberos services
+
+    Starting KDC Service:
+
+        sudo systemctl status krb5kdc
+
+        sudo systemctl restart krb5kdc
+
+    Starting Kerberos Service
+
+        sudo systemctl status kadmin
+
+        sudo systemctl restart kadmin
+
+Setting up Kerberos Environment:
+
+Creating Kerberos Principals
+
+User Principal
+
+    Note: kadmin.local => it is used only if commands are executing from the KDC server itself (Local to KDC). For remote servers user kadmin command.
+
+    sudo kadmin.local -q "add_principal -randkey reader@KAFKA.SECURE"
+
+    -randkey => No password for the Principal
+    reader@KAFKA.SECURE => User Principal (reader -> User, KAFKA.SECURE -> REALM Name)
+
+    sudo kadmin.local -q "add_principal -randkey writer@KAFKA.SECURE"
+
+    -randkey => No password for the Principal
+    writer@KAFKA.SECURE => User Principal (writer -> User, KAFKA.SECURE -> REALM Name)
+
+    sudo kadmin.local -q "add_principal -randkey admin@KAFKA.SECURE"
+
+    -randkey => No password for the Principal
+    admin@KAFKA.SECURE => User Principal (admin -> User, KAFKA.SECURE -> REALM Name)
+
+Service Principal
+
+    sudo kadmin.local -q "add_principal -randkey kafka/worker1.bigdata.com@KAFKA.SECURE"
+    # sudo kadmin.local -q "add_principal -randkey kafka@KAFKA.SECURE"
+
+    kafka/worker1.bigdata.com@KAFKA.SECURE => Service Principal
+    kafka => Username
+    worker1.bigdata.com => Hostname
+    KAFKA.SECURE => REALM Name
+
+Kadmin Shell:
+
+    sudo kadmin.local
+
+    ? - Help
+
+    add_principal - Adding a principal
+
+    list_principals - Listing the principals
+
+    delete_principal - Deleting a principal
+
+Creating Keytab Files (Exporting the Principals into Keytab files)
+
+    sudo kadmin.local -q "xst -kt /home/bigdata/kerberos/read.user.keytab reader@KAFKA.SECURE"
+
+    xst => Extract the Principal from the Kerberos Database into a Key Tab file
+    -kt => Key Tab file path
+    reader@KAFKA.SECURE => User Principal Name (which Principal)
+
+    Note: The above command will generate Key Tab file for each encryption type which are specified in kerberos configuration file.
+
+    sudo kadmin.local -q "xst -kt /home/bigdata/kerberos/write.user.keytab writer@KAFKA.SECURE"
+
+    sudo kadmin.local -q "xst -kt /home/bigdata/kerberos/admin.user.keytab admin@KAFKA.SECURE"
+
+    sudo kadmin.local -q "xst -kt /home/bigdata/kerberos/kafka.service.keytab kafka/worker1.bigdata.com@KAFKA.SECURE"
+    # sudo kadmin.local -q "xst -kt /home/bigdata/kerberos/kafka.service.keytab kafka@KAFKA.SECURE"
+
+    ll /home/bigdata/kerberos/
+
+    sudo chmod a+r /home/bigdata/kerberos/*.keytab
+
+Download or Upload to the Client Machines and Kafka Broker Machines
+
+    scp /home/bigdata/kerberos/kafka1.service.keytab bigdata@worker1.bigdata.com:/home/bigdata/kerberos/kafka.service.keytab
+
+    scp /home/bigdata/kerberos/*.user.keytab bigdata@admin1.bigdata.com:/home/bigdata/kerberos/
+
+    chmod 600 /home/bigdata/*.user.keytab #(Only Owner can read the file)
+
+Installing Kerberos Client (On Client Machines and on all Kafka Brokers):
+
+    # export DEBIAN_FRONTEND=noninteractive && sudo dnf install krb5-user -y
+
+    sudo dnf install krb5-workstation krb5-libs -y
+
+    Configuration Setting:
+
+    krb5.conf
+    =========
+
+    sudo vi /etc/krb5.conf
+
+    # To opt out of the system crypto-policies configuration of krb5, remove the
+    # symlink at /etc/krb5.conf.d/crypto-policies which will not be recreated.
+    includedir /etc/krb5.conf.d/
+
+    [logging]
+        default = FILE:/var/log/krb5libs.log
+        kdc = FILE:/var/log/krb5kdc.log
+        admin_server = FILE:/var/log/kadmind.log
+
+    [libdefaults]
+        dns_lookup_realm = false
+        ticket_lifetime = 24h
+        kdc_timesync = 1
+        renew_lifetime = 7d
+        forwardable = true
+        rdns = false
+        pkinit_anchors = FILE:/etc/pki/tls/certs/ca-bundle.crt
+        # spake_preauth_groups = edwards25519
+        default_realm = KAFKA.SECURE
+        default_ccache_name = KEYRING:persistent:%{uid}
+
+    [realms]
+        KAFKA.SECURE = {
+            kdc = admin1.bigdata.com
+            admin_server = admin1.bigdata.com
+        }
+
+Test grabbing a Kerberos Ticket
+
+    kinit -kt /home/bigdata/read.user.keytab reader
+
+    -kt => Key Tab file path
+    reader => Principal (reader User Principal Name)
+
+    kinit -kt /home/bigdata/writer.user.keytab writer
+
+    kinit -kt /home/bigdata/admin.user.keytab admin
+
+    kinit -kt /home/bigdata/admin.user.keytab admin
+
+    kinit -kt /home/bigdata/kafka.service.keytab kafka/worker1.bigdata.com
+
+To get the list of Tickets:
+
+    klist
+
+    klist -kt /home/bigdata/read.user.keytab
+
+Kafka Broker Configuration:
+
+    ssh bigdata@worker1.bigdata.com
+
+    sudo vi /opt/confluent/configs/server.properties
+
+    listeners=SASL_SSL://0.0.0.0:9094
+    advertised_listeners=SASL_SSL://worker1.bigdata.com:9094
+
+    sasl.enabled.mechanisms=GSSAPI
+    sasl.kerberos.service.name=kafka
+    security.inter.broker.protocol=SASL_SSL
+
+    Creating the jaas configuration file:
+
+    sudo vi /opt/confluent/configs/kafka_server_jaas.conf  #(This file tells Kafka broker on how to deal with Kerberos Authentication)
+
+    KafkaServer {
+        com.sun.security.auth.module.Krb5LoginModule required
+        useKeyTab=true
+        storeKey=true
+        keyTab="/home/bigdata/kerberos/kafka.service.keytab"
+        principal="kafka/worker1.bigdata.com@KAFKA.SECURE";
+    };
+
+    Setting up Environment Variable - So that Kafka can can read this
+
+    sudo vi /etc/systemd/system/kafka.service
+
+    Environment="KAFKA_OPTS=-Djava.security.auth.login.config=/opt/confluent/configs/kafka_server_jaas.conf"
+
+    sudo systemctl restart kafka.service
+
+Kafka Client Configuration:
+
+    jaas file for Kafka Clients
+
+    vi /home/bigdata/kerberos/kafka_client_jaas.conf
+
+    KafkaClient {
+        com.sun.security.auth.module.Krb5LoginModule required
+        useKeyTab=true
+        storeKey=true
+        debug=true
+        keyTab="/home/bigdata/kerberos/read.user.keytab"
+        principal="reader@KAFKA.SECURE";
+    };
+
+    vi /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+    security.protocol=SASL_SSL
+    sasl.kerberos.service.name=kafka
+    ssl.truststore.location=/home/bigdata/ssl_client/kafka.client.truststore.jks
+    ssl.truststore.password=clientpassword
+    ssl.keystore.location=/home/bigdata/ssl_client/kafka.client.keystore.jks
+    ssl.keystore.password=clientpassword
+    ssl.key.password=clientpassword
+
+Testing Clients
+
+    export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_jaas.conf"
+
+    klist
+
+    kafka-console-producer \
+        --broker-list worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic kerberos-topic-1 \
+        --producer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+    kafka-console-consumer \
+        --bootstrap-server worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic kerberos-topic-1 \
+        --from-beginning \
+        --consumer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+NOTE: Using the jaas file / configuration
+
+Instead of doing export KAFKA_OPTS="/home/bigdata/kerberos/kafka_client_jaas.conf"
+
+It is also possible to directly embed the jaas file as a config in the clients, and not do the export.
+
+Example:
+
+security.protocol=SASL_SSL
+sasl.kerberos.service.name=kafka
+ssl.truststore.location=/home/gerd/ssl/kafka.client.truststore.jks
+ssl.truststore.password=clientpass
+sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required useTicketCache=true;
+=================
+
+You can also skip doing a kinit before starting your client if your jaas file is the following:
+
+KafkaClient {
+    com.sun.security.auth.module.Krb5LoginModule required
+    useKeyTab=true
+    storeKey=true
+    debug=true
+    keyTab="/home/bigdata/kerberos/read.user.keytab"
+    principal="reader@KAFKA.SECURE";
+};
+
+Or using the config as seen above:
+
+security.protocol=SASL_SSL
+sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required useKeyTab=true storeKey=true keyTab="/tmp/reader.user.keytab" principal="reader@KAFKA.SECURE";
+
+AUTHORIZATION (ACL) IN KAFKA:
+
+    - The clients are authenticated to the brokers (using either SSL or SASL), but no permissions are defined on the clients.
+    - ACL (Access Control Lists):
+        - Topics: Restrict which client can read and write data to Kafka
+        - Consumer Groups: which client can use a specific consumer group
+        - Cluster: which client can create / delete topics or apply settings
+    - There is a concept of "Super User" in Kafka that can do everything without any special kind of ACL
+    - There is no concept of User Groups in Kafka. Each ACL have to be written for each User / Client
+    - ACLs are stored in Zookeeper, and added through the usage of the Command Line.
+    - Therefore, there must be a restriction on users who can access Zookeeper Cluster (through Security or Network Rules). Otherwise, there is a chance of modifying the ACLs in Zookeeper
+    - Only Kafka Admins should have the right to create topics and ACLs
+
+A simple usecase:
+
+    - Usecase to check granting and denying access to Kafka
+    - Users : reader, writer & admin
+    - Topic: acl-test
+    - Who should be able to do what ?
+        User reader: only consume from acl-test topic
+        User writer: producer to and read from acl-test topic
+        User admin: all privileges to topic acl-test topic
+
+Configure Kafka Brokers to support ACLs:
+
+    sudo vi /opt/confluent/configs/server.properties
+
+    authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer
+    super.users=User:admin;User:bigdata
+    allow.everyone.if.no.acl.found=false
+    security.inter.broker.protocol=SASL_SSL
+
+    sudo systemctl restart kafka.service
+
+    sudo systemctl status kafka.service
+
+Create a Kafka Topic from Client
+
+    kafka-topics --bootstrap-server worker1.bigdata.com:9092,worker2.bigdata.com:9092,worker3.bigdata.com:9092 --create --topic kafka-acl-topic --partitions 3 --replication-factor 3
+
+Create ACLs
+
+    Create & Write Permissions:
+
+    kafka-acls \
+        --authorizer-properties zookeeper.connect=master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+        --add \
+        --allow-principal User:writer \
+        --operation Create \
+        --operation Write \
+        --topic kafka-acl-topic
+
+    Read Permissions:
+
+    kafka-acls \
+        --authorizer-properties zookeeper.connect=master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+        --add \
+        --allow-principal User:reader \
+        --allow-principal User:writer \
+        --operation Read \
+        --group=* \
+        --topic kafka-acl-topic
+
+    Write Permissions:
+
+    kafka-acls \
+        --authorizer-properties zookeeper.connect=master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+        --add \
+        --allow-principal User:writer \
+        --operation Write \
+        --topic kafka-acl-topic
+
+    Checking ACLs for a Topic:
+
+    kafka-acls \
+        --authorizer-properties zookeeper.connect=master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+        --list \
+        --topic kafka-acl-topic
+
+Validate ACLs
+
+    User Writer from Client Machine:
+
+    export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_writer_jaas.conf"
+    kdestroy
+    klist
+
+    kinit -kt /home/bigdata/kerberos/write.user.keytab writer
+    klist
+
+    kafka-console-producer \
+        --broker-list worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic kafka-acl-topic \
+        --producer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+    kafka-console-consumer \
+        --bootstrap-server worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic kafka-acl-topic \
+        --from-beginning \
+        --consumer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+    User Reader from Client Machine:
+
+    export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_reader_jaas.conf"
+    kdestroy
+    klist
+
+    kinit -kt /home/bigdata/kerberos/read.user.keytab reader
+    klist
+
+    kafka-console-consumer \
+        --bootstrap-server worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic kafka-acl-topic \
+        --from-beginning \
+        --consumer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+    User admin (Super User) from Client Machine:
+
+    export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/client/kafka_client_jaas.conf"
+    kinit -kt /home/bigdata/admin.user.keytab admin
+
+    kafka-console-producer \
+        --broker-list worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic kafka-acl-topic \
+        --producer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+    kafka-console-consumer \
+        --bootstrap-server worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic kafka-acl-topic \
+        --from-beginning \
+        --consumer.config /home/bigdata/client/kafka_client_kerberos.properties
+
+Deleting an ACL:
+
+    kafka-acls \
+        --authorizer-properties zookeeper.connect=master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181 \
+        --remove \
+        --allow-principal User:reader \
+        --operation Read \
+        --topic acl-test
+
+Debugging:
+
+    Check the Broker logs:
+
+    cat $CONFLUENT_HOME/logs/kafka-authorizer.log
+
+    By default, the logging level is set to INFO. This will only log the Denied requests, if we want to log the Allowed requests then change the logging level to DEBUG in the below file:
+
+    vi $CONFLUENT_HOME/config/log4j.properties
+
+    log4j.logger.kafka.authorizer.logger=DEBUG, authorizerAppender
+
+ZOOKEEPER SECURITY
+
+Why securing Zookeeper:
+
+    - By default, in Zookeeper any user that's connected has all the privileges
+    - The Kafka Brokers store Metadata in Zookeeper.
+        - Topics List: /brokers/topics
+        - Broker List: /brokers/ids
+        - Topic Configurations: /config/topics
+        - Kafka ACLs: /kafka-acl
+    - It is important to secure Zookeeper to prevent Unauthorized users from modifying the Metadata in Zookeeper (especially the Kafka ACLs)
+
+Zookeeper Security Models:
+
+    Zookeeper has two security models:
+        - Default: Anyone can read, write data etc.,
+        - Secure: Authenticated Users have right to do read / write operations
+
+    Zookeeper Authentication has the following ACL schemes:
+        - "world": No Authentication (default)
+        - "digest": Username & Password
+        - "sasl": Kerberos
+
+    Zookeeper Nodes Security:
+
+        - Zookeeper has its own ACL for each node
+        - Each node has ACL in the form of "cdwra":
+            - Create: Create a Child Node
+            - Delete: Delete a Child Node
+            - Write: Set Data For a Node
+            - Read: Read Data from a Node and its children
+            - Admin: Create a Child Node
+        - We must set Kafka to have "cdwra" on the Kafka Nodes and the "world" (anyone else) to have "r" permission.
+
+    Notes:
+        - Need to enable security on every Zookeeper Node
+        - Need to have each & every Kafka Broker use the same security credentials to Kafka
+        - Need Zookeeper to use the "secure znode" by default
+
+    Important: It's a lot of work to secure Zookeeper user Kerberos. A Simple Security Model is to use Network rules to only allow Kafka to talk to Zookeeper.
+
+Hands-on:
+
+Creating Kerberos principals and keytabs:
+
+    Login to Kerberos Node (admin1.bigdata.com)
+
+        ssh bigdata@admin1.bigdata.com
+
+    Create Principal
+
+        sudo kadmin.local -q "add_principal -randkey zookeeper/master1.bigdata.com@KAFKA.SECURE"
+
+    Extracting the Principal to a keytab file
+
+        sudo kadmin.local -q "xst -kt /home/bigdata/kerberos/zookeeper1.service.keytab zookeeper/master1.bigdata.com@KAFKA.SECURE"
+
+        chmod a+r /home/bigdata/kerberos/zookeeper1.service.keytab
+
+        scp /home/bigdata/kerberos/zookeeper1.service.keytab bigdata@master1.bigdata.com:/home/bigdata/kerberos/zookeeper.service.keytab
+
+    Login to master1.bigdata.com and the Keytab file (The Master node should have the Kerberos Client)
+
+        ssh bigdata@master1.bigdata.com
+
+        chmod 600 /home/bigdata/kerberos/zookeeper.service.keytab
+
+        klist -kt /home/bigdata/kerberos/zookeeper.service.keytab
+
+        kdestroy
+
+        kinit -kt /home/bigdata/kerberos/zookeeper.service.keytab zookeeper/master1.bigdata.com@KAFKA.SECURE
+
+Configure SASL authentication in Zookeeper:
+
+    Zookeeper Configuration:
+
+        sudo vi /opt/confluent/configs/zookeeper.properties
+
+        authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+        jaasLoginRenew=3600000
+
+    Proper Zookeeper & Kafka jaas file:
+
+        sudo vi /opt/confluent/configs/zookeeper_jaas.conf
+
+        Server {
+            com.sun.security.auth.module.Krb5LoginModule required
+            useKeyTab=true
+            storeKey=true
+            keyTab="/home/bigdata/kerberos/zookeeper.service.keytab"
+            principal="zookeeper/master1.bigdata.com@KAFKA.SECURE";
+        };
+
+        The following jaas file on all Kafka Brokers acts as a Client to Zookeeper
+
+        sudo vi /opt/confluent/configs/kafka_server_jaas.conf
+
+        KafkaServer {
+            com.sun.security.auth.module.Krb5LoginModule required
+            userKeyTab=true
+            storeKey=true
+            keyTab="/home/bigdata/kafka.service.keytab"
+            principal="zookeeper/worker1.bigdata.com@KAFKA.SECURE"
+        };
+
+        Client {
+            com.sun.security.auth.module.Krb5LoginModule required
+            useKeyTab=true
+            storeKey=true
+            keyTab="/home/bigdata/kerberos/zk-client.service.keytab"
+            principal="zookeeper@KAFKA.SECURE";
+        };
+
+        # NOTE: To get the keytab for Zookeeper client (Broker) we should not use the hostname
+
+        sudo kadmin.local -q "add_principal -randkey zookeeper@KAFKA.SECURE"
+
+        sudo kadmin.local -q "xst -kt /home/bigdata/kerberos/zk-client.service.keytab zookeeper@KAFKA.SECURE"
+
+        sudo scp kerberos/zk-client.service.keytab  bigdata@worker3.bigdata.com:/home/bigdata/kerberos/zk-client.service.keytab
+
+
+    Zookeeper startup script:
+
+        sudo vi /etc/systemd/system/zookeeper.service
+
+        Environment="KAFKA_OPTS=-Djava.security.auth.login.config=/opt/confluent/configs/zookeeper_jaas.conf"
+
+        sudo systemctl daemon-reload
+
+        sudo systemctl restart zookeeper
+
+        journalctl -u zookeeper.service | grep authenticated
+
+        NOTE: Also restart all the Kafka Brokers
+
+        journalctl -u kafka.service | grep -i saslauthenticated
+
+Test Scenario
+
+Zookeeper ZNodes:
+
+    - Default behaviour
+    - Specifying ACLs
+    - Check access with Authenticated & Unauthenticated connection
+    - Existing Kafka Topic's ZNodes
+
+    Zookeeper shell with Authenticated User:
+
+        export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/zookeeper_jaas.conf"
+        zookeeper-shell master1.bigdata.com:2181
+
+        ls /kafka/cluster/id
+
+        get /kafka/cluster/id
+
+        create /test-node1 "This is a test node 1 from Authenticated User"
+
+        get /test-node1
+
+        getAcl /test-node1
+
+        To create ZNode with ACL:
+
+        create /protected-znode "This is a Protected ZNode" sasl:zookeeper/master1.bigdata.com@KAFKA.SECURE:cdwra
+
+        getAcl /protected-znode
+
+        get /protected-znode
+
+
+    Zookeeper shell with Unauthenticated User:
+
+        export KAFKA_OPTS=""
+        zookeeper-shell master1.bigdata.com:2181
+
+        ls /kafka/cluster/id
+
+        get /kafka/cluster/id
+
+        create /test-node2 "This is a test node 2 from Unauthenticated User"
+
+        get /test-node2
+
+        getAcl /test-node2
+
+        getAcl /protected-znode
+
+        get /protected-znode        # This gives the Error
+
+
+    NOTE:
+
+        - All the existing ZNodes are having full permissions so, anyone can read / write / delete data.
+        - Specifying whole Kerberos principal on the ACL properties.
+            For Ex: Only 1 Zookeeper principal (including hostname) is used to create the ZNode but what happens if a cluster has multiple brokers and zookeepers.
+
+Adjust Kafka & Zookeeper Configuration - Enabling ZK Authorization on topics
+
+    Kafka Configuration to use the Zookeeper principals on the ZNodes which has Kafka Topics information - On All Kafka brokers:
+
+        sudo vi /opt/confluent/configs/server.properties
+
+        zookeeper.set.acl=true      # For newly create topics
+
+    Zookeeper Configuration - On all Zookeeper Nodes:
+
+        sudo vi /opt/confluent/configs/zookeeper.properties
+
+        kerberos.removeHostFromPrincipal=true
+        kerberos.removeRealmFromPrincipal=true
+
+    Restart all the Zookeepers
+
+    Restart all the Brokers
+
+    Check the statuses
+
+Demo 1:
+
+    The above configuration changes are only effected for newly created topics
+
+    Create a New Topic
+
+    export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/zookeeper_jaas.conf"
+
+    kafka-topics \
+        --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+        --create \
+        --topic secure-topic-with-acls \
+        --replication-factor 3 \
+        --partitions 3
+
+    Check the ACLs in Zookeeper
+
+    zookeeper-shell master1.bigdata.com:2181
+
+    getAcl /config/topics/secure-topic-with-acls
+
+    kdestroy
+
+    cat /home/bigdata/kerberos/kafka_client_jaas.conf
+    
+    KafkaClient {
+        com.sun.security.auth.module.Krb5LoginModule required
+        useKeyTab=true
+        storeKey=true
+        debug=true
+        keyTab="/home/bigdata/kerberos/kafka_client.user.keytab"
+        principal="kafka@KAFKA.SECURE";
+    };
+
+    export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_jaas.conf"
+    kdestroy
+    klist
+
+    kinit -kt /home/bigdata/kerberos/kafka_client.user.keytab kafka@KAFKA.SECURE
+    klist
+
+    kafka-console-producer \
+        --broker-list worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic secure-topic-with-acls \
+        --producer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+    kafka-console-consumer \
+        --bootstrap-server  worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+        --topic secure-topic-with-acls \
+        --from-beginning \
+        --consumer.config /home/bigdata/kerberos/kafka_client_kerberos.properties
+
+Demo 2:
+
+    Super User as "life saver"
+        - Manually change ACL, ending up in "no access anylonger"
+        - Enable SuperUser access via Digest-Auth
+        - "repair" the ACL
+
+    The Super User will be helpful whenever something goes wrong in setting up the ACLs and when the ZNode is totally blocked.
+
+        zookeeper-shell master1.bigdata.com 2181
+
+        getAcl /kafka/config/topics/secure-topic-with-acls
+
+        setAcl /kafka/config/topics/secure-topic-with-acls world:anyone:
+
+        getAcl /kafka/config/topics/secure-topic-with-acls        # Now here, the ZNode is blocked totally no one is able to Read, Write etc.,
+
+        get /kafka/config/topics/secure-topic-with-acls           # This will fail, because no one has no permissions
+
+        quit
+
+    Enabling Super User Access for Zookeeper
+
+        Create Super User digest password
+
+        export ZK_CLASSPATH=/opt/confluent/configs/:/usr/local/confluent/share/java/kafka/*
+
+        java -cp $ZK_CLASSPATH org.apache.zookeeper.server.auth.DigestAuthenticationProvider super:superpassword        # This will generate the digest copy it and use for the mext steps
+
+        super:superpassword->super:J21rBDz0FgMM/yHfeEsSojKHX3g=
+
+        Add the digest to Zookeeper Startup Script
+
+        sudo vi /etc/systemd/system/zookeeper.service
+
+        Environment="KAFKA_OPTS=-Djava.security.auth.login.config=/opt/confluent/configs/zookeeper_jaas.conf -Dzookeeper.DigestAuthenticationProvider=super:J21rBDz0FgMM/yHfeEsSojKHX3g="
+
+        sudo systemctl daemon-reload
+
+        sudo systemctl restart zookeeper.service
+
+        Connect to Zookeeper shell
+
+        zookeeper-shell master1.bigdata.com:2181
+
+        getAcl /kafka/config/topics/secure-topic-with-acls        # Now here, the ZNode is blocked totally no one is able to Read, Write etc.,
+
+        addauth digest super:superpassword
+
+        setAcl /kafka/config/topics/secure-topic-with-acls world:anyone:r,sasl:zookeeper:cdwra,sasl:kafka:cdwra
+
+        getAcl /kafka/config/topics/secure-topic-with-acls
+
+Migrate existing ZNodes to secure ones
+
+    Check the permissions of an Unsecure ZNode
+
+    zookeeper-shell master1.bigdata.com:2181 getAcl /kafka/config/topics/secure-topic-with-acls
+
+    There are two ways that a ZNode can be migrated from Unsecure to Secure
+
+    1. Using the setAcl command - But this is a manual process more error prune
+    2. Zookeeper Security Migration script - zookeeper-security-migration.sh which will automatically convert all Unsecure ZNodes to secure ZNodes
+
+    zookeeper-security-migration --zookeeper.connect master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181 --zookeeper.acl secure
+
+    Check the permissions again:
+
+    zookeeper-shell master1.bigdata.com:2181 getAcl /kafka/config/topics/secure-topic-with-acls
+
+    Migration from Secure to Unsecure ZNodes:
+
+    zookeeper-security-migration --zookeeper.connect master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181 --zookeeper.acl unsecure
+
+Summary:
+
+    - Zookeeper Configuration
+        - JAAS file section for ZK connection called Server
+        - Adjust handling of Kerberos Principals
+            - kerberos.removeHostFromPrincipal
+            - kerberos.removeRealmFromPrincipal
+
+    - Kafka Configuration
+        - JAAS file section for ZK Connection called Client
+        - Enforce setting ACLs in ZK (zookeeper.set.acl=true)
+        - Use the same Kerberos Principal name throughout ALL brokers
+
+    - Zookeeper SuperUser comes to rescue
+
+    - Use zookeeper-security-migration tool to transform non-secured ZNodes into secured ones.
+
+CLUSTER SECURITY
+
+Broker to Broker
+
+    - Brokers have to authenticate to each other
+    - Ex. inter.broker.protocol=SASL_SSL
+    - Define the brokers as being "super users"
+    - It is useful for extra security but may come with a performance impact. If SSL is used the brokers will have to encrypt the data and use CPU resource for replication.
+
+Broker to Zookeeper
+
+    - Zookeeper holds the ACLs so it needs to secured.
+    - Using SASL: Zookeeper needs to get a Username and Kafka needs to authenticate to Zookeeper
 
 
 
@@ -385,6 +1327,25 @@ Step 3 :
 
 
 
+
+KAFKA_OPTS:
+
+     "-Djava.security.auth.login.config=/etc/zookeeper/secrets/zookeeper_jaas.conf
+     -Dzookeeper.kerberos.removeHostFromPrincipal=true
+     -Dzookeeper.kerberos.removeRealmFromPrincipal=true
+     -Dzookeeper.authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+     -Dzookeeper.requireClientAuthScheme=sasl"
+
+
+
+
+KAFKA_OPTS:
+
+     "-Djava.security.auth.login.config=/etc/zookeeper/secrets/zookeeper_jaas.conf
+     -Dzookeeper.kerberos.removeHostFromPrincipal=true
+     -Dzookeeper.kerberos.removeRealmFromPrincipal=true
+     -Dzookeeper.authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+     -Dzookeeper.requireClientAuthScheme=sasl"
 
 
 
