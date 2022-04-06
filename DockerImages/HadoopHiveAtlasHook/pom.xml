@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>DockerImages</artifactId>
+        <groupId>com.bigdata.docker</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>HadoopHiveWithAtlas</artifactId>
+    <version>2.7.6-2.3.8-2.2.0</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <docker.maven.plugin.version>0.33.0</docker.maven.plugin.version>
+        <docker.container.hostname>apache-hadoop-hive-with-atlas-docker-host</docker.container.hostname>
+        <docker.container.name>apache-hadoop-hive-with-atlas-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>apache-hadoop-hive-with-atlas-docker-network</docker.network.name>
+        <docker.container.port.mapping>50070:50070,50030:50030,8088:8088,19888:19888</docker.container.port.mapping>
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>REPALCE_WITH_DOCKER_HUB_USER_NAME</docker.hub.username>
+        <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>apache-hadoop-hive-with-atlas</docker.image.name>
+        <startup.service>sh</startup.service>
+
+        <apache.hadoop.download.url>https://archive.apache.org/dist/hadoop/common/hadoop-2.7.6/hadoop-2.7.6.tar.gz</apache.hadoop.download.url>
+        <apache.hive.download.url>https://mirrors.estointernet.in/apache/hive/hive-2.3.8/apache-hive-2.3.8-bin.tar.gz</apache.hive.download.url>
+        <mysql.connector.jar>https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.23/mysql-connector-java-8.0.23.jar</mysql.connector.jar>
+        <hadoop.home.dir>/usr/local/hadoop</hadoop.home.dir>
+        <hadoop.config.dir>/usr/local/hadoop/etc/hadoop</hadoop.config.dir>
+        <hive.home.dir>/usr/local/hive</hive.home.dir>
+        <hive.config.dir>/usr/local/hive/conf</hive.config.dir>
+
+        <hadoop.tmp.dir>\/usr\/local\/hadoop\/data\/tmp</hadoop.tmp.dir>
+        <fs.default.name>hdfs:\/\/localhost:9000</fs.default.name>
+        <dfs.namenode.name.dir>\/usr\/local\/hadoop\/data\/namenode</dfs.namenode.name.dir>
+        <dfs.datanode.data.dir>\/usr\/local\/hadoop\/data\/datanode</dfs.datanode.data.dir>
+        <dfs.namenode.checkpoint.dir>\/usr\/local\/hadoop\/data\/namesecondary</dfs.namenode.checkpoint.dir>
+        <dfs.replication>1</dfs.replication>
+        <dfs.namenode.datanode.registration.ip.hostname.check>false</dfs.namenode.datanode.registration.ip.hostname.check>
+
+        <yarn.acl.enable>0</yarn.acl.enable>
+        <yarn.resourcemanager.hostname>localhost</yarn.resourcemanager.hostname>
+        <yarn.nodemanager.aux.services.mapreduce.shuffle.class>org.apache.hadoop.mapred.ShuffleHandler</yarn.nodemanager.aux.services.mapreduce.shuffle.class>
+        <yarn.nodemanager.aux.services>mapreduce_shuffle</yarn.nodemanager.aux.services>
+        <yarn.nodemanager.resource.memory.mb>4096</yarn.nodemanager.resource.memory.mb>
+        <yarn.scheduler.maximum.allocation.mb>4096</yarn.scheduler.maximum.allocation.mb>
+        <yarn.scheduler.minimum.allocation.mb>512</yarn.scheduler.minimum.allocation.mb>
+        <yarn.nodemanager.resource.cpu.vcores>2</yarn.nodemanager.resource.cpu.vcores>
+        <yarn.nodemanager.vmem.check.enabled>false</yarn.nodemanager.vmem.check.enabled>
+        <yarn.nodemanager.disk.health.checker.max.disk.utilization.per.disk.percentage>95</yarn.nodemanager.disk.health.checker.max.disk.utilization.per.disk.percentage>
+        <yarn.nodemanager.pmem.check.enabled>false</yarn.nodemanager.pmem.check.enabled>
+
+        <history.server.host>localhost</history.server.host>
+        <mapreduce.framework.name>yarn</mapreduce.framework.name>
+        <yarn.app.mapreduce.am.resource.mb>512</yarn.app.mapreduce.am.resource.mb>
+        <yarn.app.mapreduce.am.command.opts>-Xmx2048m</yarn.app.mapreduce.am.command.opts>
+        <mapreduce.map.cpu.vcores>1</mapreduce.map.cpu.vcores>
+        <mapreduce.reduce.cpu.vcores>1</mapreduce.reduce.cpu.vcores>
+
+        <javax.jdo.option.connectionurl>jdbc:mysql:\/\/localhost\/metastore?createDatabaseIfNotExist=true</javax.jdo.option.connectionurl>
+        <javax.jdo.option.connectiondrivername>com.mysql.cj.jdbc.Driver</javax.jdo.option.connectiondrivername>
+        <javax.jdo.option.connectionusername>hive</javax.jdo.option.connectionusername>
+        <javax.jdo.option.connectionpassword>hive</javax.jdo.option.connectionpassword>
+        <hive.server2.transport.mode>binary</hive.server2.transport.mode>
+        <hive.server2.thrift.http.port>10001</hive.server2.thrift.http.port>
+        <hive.server2.thrift.http.max.worker.threads>500</hive.server2.thrift.http.max.worker.threads>
+        <hive.server2.thrift.http.min.worker.threads>5</hive.server2.thrift.http.min.worker.threads>
+        <hive.server2.thrift.http.path>cliservice</hive.server2.thrift.http.path>
+        <hive.server2.enable.doas>false</hive.server2.enable.doas>
+
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!--<dockerHost>unix:///var/run/docker.sock</dockerHost>-->
+
+                    <!-- For Windows Environment-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <args>
+                                    <APACHE_HADOOP_DOWNLOAD_URL>${apache.hadoop.download.url}</APACHE_HADOOP_DOWNLOAD_URL>
+                                    <APACHE_Hive_DOWNLOAD_URL>${apache.hive.download.url}</APACHE_Hive_DOWNLOAD_URL>
+                                </args>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                            </build>
+
+                            <run>
+                                <env>
+                                    <HADOOP_HOME>${hadoop.home.dir}</HADOOP_HOME>
+                                    <HADOOP_CONF_DIR>${hadoop.config.dir}</HADOOP_CONF_DIR>
+                                    <DFS_NAMENODE_NAME_DIR>${dfs.namenode.name.dir}</DFS_NAMENODE_NAME_DIR>
+                                    <DFS_DATANODE_DATA_DIR>${dfs.datanode.data.dir}</DFS_DATANODE_DATA_DIR>
+                                    <DFS_NAMENODE_CHECKPOINT_DIR>${dfs.namenode.checkpoint.dir}</DFS_NAMENODE_CHECKPOINT_DIR>
+                                    <DFS_REPLICATION>${dfs.replication}</DFS_REPLICATION>
+                                    <DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK>${dfs.namenode.datanode.registration.ip.hostname.check}</DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK>
+                                    <YARN_ACL_ENABLE>${yarn.acl.enable}</YARN_ACL_ENABLE>
+                                    <YARN_RESOURCEMANAGER_HOSTNAME>${yarn.resourcemanager.hostname}</YARN_RESOURCEMANAGER_HOSTNAME>
+                                    <YARN_NODEMANAGER_AUX_SERVICES_MAPREDUCE_SHUFFLE_CLASS>${yarn.nodemanager.aux.services.mapreduce.shuffle.class}</YARN_NODEMANAGER_AUX_SERVICES_MAPREDUCE_SHUFFLE_CLASS>
+                                    <YARN_NODEMANAGER_AUX_SERVICES>${yarn.nodemanager.aux.services}</YARN_NODEMANAGER_AUX_SERVICES>
+                                    <YARN_NODEMANAGER_RESOURCE_MEMORY_MB>${yarn.nodemanager.resource.memory.mb}</YARN_NODEMANAGER_RESOURCE_MEMORY_MB>
+                                    <YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB>${yarn.scheduler.maximum.allocation.mb}</YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB>
+                                    <YARN_SCHEDULER_MINIMUM_ALLOCATION_MB>${yarn.scheduler.minimum.allocation.mb}</YARN_SCHEDULER_MINIMUM_ALLOCATION_MB>
+                                    <YARN_NODEMANAGER_RESOURCE_CPU_VCORES>${yarn.nodemanager.resource.cpu.vcores}</YARN_NODEMANAGER_RESOURCE_CPU_VCORES>
+                                    <YARN_NODEMANAGER_VMEM_CHECK_ENABLED>${yarn.nodemanager.vmem.check.enabled}</YARN_NODEMANAGER_VMEM_CHECK_ENABLED>
+                                    <YARN_NODEMANAGER_DISK_HEALTH_CHECKER_MAX_DISK_UTILIZATION_PER_DISK_PERCENTAGE>${yarn.nodemanager.disk.health.checker.max.disk.utilization.per.disk.percentage}</YARN_NODEMANAGER_DISK_HEALTH_CHECKER_MAX_DISK_UTILIZATION_PER_DISK_PERCENTAGE>
+                                    <YARN_NODEMANAGER_PMEM_CHECK_ENABLED>${yarn.nodemanager.pmem.check.enabled}</YARN_NODEMANAGER_PMEM_CHECK_ENABLED>
+                                    <HISTORY_SERVER_HOST>localhost</HISTORY_SERVER_HOST>
+                                    <MAPREDUCE_FRAMEWORK_NAME>${mapreduce.framework.name}</MAPREDUCE_FRAMEWORK_NAME>
+                                    <YARN_APP_MAPREDUCE_AM_RESOURCE_MB>${yarn.app.mapreduce.am.resource.mb}</YARN_APP_MAPREDUCE_AM_RESOURCE_MB>
+                                    <YARN_APP_MAPREDUCE_AM_COMMAND_OPTS>${yarn.app.mapreduce.am.command.opts}</YARN_APP_MAPREDUCE_AM_COMMAND_OPTS>
+                                    <MAPREDUCE_MAP_CPU_VCORES>${mapreduce.map.cpu.vcores}</MAPREDUCE_MAP_CPU_VCORES>
+                                    <MAPREDUCE_REDUCE_CPU_VCORES>${mapreduce.reduce.cpu.vcores}</MAPREDUCE_REDUCE_CPU_VCORES>
+                                    <JAVAX_JDO_OPTION_CONNECTIONURL>${javax.jdo.option.connectionurl}</JAVAX_JDO_OPTION_CONNECTIONURL>
+                                    <JAVAX_JDO_OPTION_CONNECTIONDRIVERNAME>${javax.jdo.option.connectiondrivername}</JAVAX_JDO_OPTION_CONNECTIONDRIVERNAME>
+                                    <JAVAX_JDO_OPTION_CONNECTIONUSERNAME>${javax.jdo.option.connectionusername}</JAVAX_JDO_OPTION_CONNECTIONUSERNAME>
+                                    <JAVAX_JDO_OPTION_CONNECTIONPASSWORD>${javax.jdo.option.connectionpassword}</JAVAX_JDO_OPTION_CONNECTIONPASSWORD>
+                                    <HIVE_SERVER2_TRANSPORT_MODE>${hive.server2.transport.mode}</HIVE_SERVER2_TRANSPORT_MODE>
+                                    <HIVE_SERVER2_THRIFT_HTTP_PORT>${hive.server2.thrift.http.port}</HIVE_SERVER2_THRIFT_HTTP_PORT>
+                                    <HIVE_SERVER2_THRIFT_HTTP_MAX_WORKER_THREADS>${hive.server2.thrift.http.max.worker.threads}</HIVE_SERVER2_THRIFT_HTTP_MAX_WORKER_THREADS>
+                                    <HIVE_SERVER2_THRIFT_HTTP_MIN_WORKER_THREADS>${hive.server2.thrift.http.min.worker.threads}</HIVE_SERVER2_THRIFT_HTTP_MIN_WORKER_THREADS>
+                                    <HIVE_SERVER2_THRIFT_HTTP_PATH>${hive.server2.thrift.http.path}</HIVE_SERVER2_THRIFT_HTTP_PATH>
+                                    <HIVE_SERVER2_ENABLE_DOAS>${hive.server2.enable.doas}</HIVE_SERVER2_ENABLE_DOAS>
+                                </env>
+                                <hostname>${docker.container.hostname}</hostname>
+                                <network>
+                                    <mode>${docker.network.mode}</mode>
+                                    <name>${docker.network.name}</name>
+                                </network>
+                                <ports>
+                                    <port>${docker.container.port.mapping}</port>
+                                </ports>
+                                <containerNamePattern>${docker.container.name}</containerNamePattern>
+                                <cmd>${startup.service}</cmd>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

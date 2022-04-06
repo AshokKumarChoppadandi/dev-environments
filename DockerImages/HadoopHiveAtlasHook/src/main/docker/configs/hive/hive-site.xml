@@ -1,0 +1,59 @@
+<configuration>
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>JAVAX_JDO_OPTION_CONNECTIONURL</value>
+        <description>metadata is stored in a MySQL server</description>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>JAVAX_JDO_OPTION_CONNECTIONDRIVERNAME</value>
+        <description>MySQL JDBC driver class</description>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>JAVAX_JDO_OPTION_CONNECTIONUSERNAME</value>
+        <description>user name for connecting to mysql server</description>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>JAVAX_JDO_OPTION_CONNECTIONPASSWORD</value>
+        <description>password for connecting to mysql server</description>
+    </property>
+    <property>
+        <name>hive.server2.transport.mode</name>
+        <value>HIVE_SERVER2_TRANSPORT_MODE</value>
+        <description>Set to http to enable HTTP transport mode</description>
+    </property>
+    <property>
+        <name>hive.server2.thrift.http.port</name>
+        <value>HIVE_SERVER2_THRIFT_HTTP_PORT</value>
+        <description>HTTP port number to listen on</description>
+    </property>
+    <property>
+        <name>hive.server2.thrift.http.max.worker.threads</name>
+        <value>HIVE_SERVER2_THRIFT_HTTP_MAX_WORKER_THREADS</value>
+        <description>Maximum worker threads in the server pool</description>
+    </property>
+    <property>
+        <name>hive.server2.thrift.http.min.worker.threads</name>
+        <value>HIVE_SERVER2_THRIFT_HTTP_MIN_WORKER_THREADS</value>
+        <description>Minimum worker threads in the server pool</description>
+    </property>
+    <property>
+        <name>hive.server2.thrift.http.path</name>
+        <value>HIVE_SERVER2_THRIFT_HTTP_PATH</value>
+        <description>The service endpoint</description>
+    </property>
+    <property>
+        <name>hive.server2.enable.doAs</name>
+        <value>HIVE_SERVER2_ENABLE_DOAS</value>
+        <description>
+            Setting this property to true will have HiveServer2 execute
+            Hive operations as the user making the calls to it.
+        </description>
+    </property>
+    <property>
+        <name>hive.exec.post.hooks</name>
+        <value>org.apache.atlas.hive.hook.HiveHook</value>
+    </property>
+</configuration>
