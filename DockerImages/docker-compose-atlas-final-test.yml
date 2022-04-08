@@ -1,111 +1,116 @@
 version: '2'
 
 networks:
-  atlas_cluster:
+  atlas_cluster_new:
     driver: bridge
 
 services:
-  zookeeper:
+  zookeepernew:
     image: ashokkumarchoppadandi/apache-kafka:2.6.1
-    container_name: zookeeper
-    hostname: zookeeper
+    container_name: zookeepernew
+    hostname: zookeepernew
     networks:
-      - atlas_cluster
+      - atlas_cluster_new
     ports:
-      - "12181:2181"
+      - "12182:2181"
     command: zookeeper
 #    volumes:
 #      - ./AtlasSetup/Zookeeper/data:/tmp/zookeeper:rw
 
-  broker:
+  brokernew:
     image: ashokkumarchoppadandi/apache-kafka:2.6.1
-    container_name: broker
-    hostname: broker
+    container_name: brokernew
+    hostname: brokernew
     networks:
-      - atlas_cluster
+      - atlas_cluster_new
     ports:
-      - "19092:9092"
+      - "19093:9092"
     depends_on:
-      - zookeeper
+      - zookeepernew
     environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/broker:9092
-      ZOOKEEPER_CONNECT_LIST: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/brokernew:9092
+      ZOOKEEPER_CONNECT_LIST: "zookeepernew:2181"
     command: kafka
 #    volumes:
 #      - ./AtlasSetup/Kafka/data:/tmp/kafka-logs:rw
 
-  mysql:
+  mysqlnew:
     image: ashokkumarchoppadandi/mysql:latest
-    container_name: mysql
+    container_name: mysqlnew
     networks:
-      - atlas_cluster
-    hostname: mysql
+      - atlas_cluster_new
+    hostname: mysqlnew
     environment:
       MYSQL_ROOT_PASSWORD: Password@123
       MYSQL_DATABASE: metastore
 
-  hadoop:
+  hadoopnew:
     image: ashokkumarchoppadandi/apache-hadoop-hive-with-atlas:2.7.6-2.3.8-2.2.0
-    container_name: hadoop
-    hostname: hadoop
+    container_name: hadoopnew
+    hostname: hadoopnew
     networks:
-      - atlas_cluster
+      - atlas_cluster_new
     ports:
-      - "50070:50070"
-      - "50030:50030"
-      - "18088:8088"
-      - "19888:19888"
-      - "18042:18042"
-      - "35945:35945"
-      - "14040:4040"
-      - "10002:10002"
+      - "50071:50070"
+      - "50031:50030"
+      - "18089:8088"
+      - "19889:19888"
+      - "18043:18042"
+      - "35946:35945"
+      - "14041:4040"
+      - "10003:10002"
     depends_on:
-      - mysql
+      - mysqlnew
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/hadoop:9000
+      FS_DEFAULT_NAME: hdfs:\/\/hadoopnew:9000
       DFS_REPLICATION: 1
-      YARN_RESOURCEMANAGER_HOSTNAME: hadoop
-      HISTORY_SERVER_HOST: hadoop
-      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql:\/\/mysql\/metastore?createDatabaseIfNotExist=true
+      YARN_RESOURCEMANAGER_HOSTNAME: hadoopnew
+      HISTORY_SERVER_HOST: hadoopnew
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql:\/\/mysqlnew\/metastore?createDatabaseIfNotExist=true
+      HIVE_AUX_JARS_PATH_FOR_ATLAS: \/opt\/apache-atlas\/hook\/hive
+      HBASE_TABLE: apache_atlas_janus
+      ZK_QUORUM: zookeepernew:2181
+      KAFKA_BOOTSTRAP_SERVERS: brokernew:9092
+      ATLAS_HOSTNAME: atlasnew
     command:
       - sh
       - atlashive
 #    volumes:
 #      - ./AtlasSetup/Hadoop/data:/usr/local/hadoop/data:rw
 
-  hbase:
+  hbasenew:
     image: ashokkumarchoppadandi/apache-hbase:2.4.9
-    container_name: hbase
-    hostname: hbase
+    container_name: hbasenew
+    hostname: hbasenew
     networks:
-      - atlas_cluster
+      - atlas_cluster_new
     ports:
-      - "16010:16010"
-      - "16030:16030"
+      - "16011:16010"
+      - "16031:16030"
     depends_on:
-      - zookeeper
-      - hadoop
+      - zookeepernew
+      - hadoopnew
     environment:
-      HBASE_ROOT_DIR: hdfs:\/\/hadoop:9000\/hbase
+      HBASE_ROOT_DIR: hdfs:\/\/hadoopnew:9000\/hbase
       HBASE_CLUSTER_DISTRIBUTED: "true"
-      ZOOKEEPER_QUORUM: zookeeper:2181
+      ZOOKEEPER_QUORUM: zookeepernew:2181
     command:
       - distributed
       - all
 
-  solr:
+  solrnew:
     image: ashokkumarchoppadandi/apache-solr:8.11.1
-    container_name: solr
-    hostname: solr
+    container_name: solrnew
+    hostname: solrnew
     networks:
-      - atlas_cluster
+      - atlas_cluster_new
     ports:
-      - "8983:8983"
+      - "18983:8983"
     depends_on:
-      - zookeeper
+      - zookeepernew
     environment:
       MEMORY: 1g
-      ZOOKEEPER_QUORUM: zookeeper:2181
+      ZOOKEEPER_QUORUM: zookeepernew:2181
       SOLR_PORT: 8983
     command:
       - cloud
@@ -113,25 +118,25 @@ services:
 #      - ./AtlasSetup/Solr/userfiles:/var/solr-home/userfiles:rw
 #      - ./AtlasSetup/Solr/filestore:/var/solr-home/filestore:rw
 
-  atlas:
+  atlasnew:
     image: ghcr.io/hritvikpatel4/apache-atlas:master
-    container_name: atlas
-    hostname: atlas
+    container_name: atlasnew
+    hostname: atlasnew
     networks:
-      - atlas_cluster
+      - atlas_cluster_new
     ports:
-      - "21000:21000"
+      - "21001:21000"
     depends_on:
-      - zookeeper
-      - broker
-      - hadoop
-      - hbase
-      - solr
+      - zookeepernew
+      - brokernew
+      - hadoopnew
+      - hbasenew
+      - solrnew
     environment:
       HBASE_TABLE: apache_atlas_janus
-      ZK_QUORUM: zookeeper:2181
-      KAFKA_BOOTSTRAP_SERVERS: broker:9092
-      HOSTNAME: atlas
-      SOLR_HOST: solr
+      ZK_QUORUM: zookeepernew:2181
+      KAFKA_BOOTSTRAP_SERVERS: brokernew:9092
+      HOSTNAME: atlasnew
+      SOLR_HOST: solrnew
       SOLR_PORT: 8983
     command: cold_start
