@@ -1,0 +1,128 @@
+version: '2'
+ 
+networks:
+  atlas_cluster:
+    driver: bridge
+ 
+services:
+  zookeeper:
+    image: ashokkumarchoppadandi/apache-kafka:2.6.1
+    container_name: zookeeper
+    hostname: zookeeper
+    networks:
+      - atlas_cluster
+    ports:
+      - "12181:2181"
+    command: zookeeper
+ 
+  broker:
+    image: ashokkumarchoppadandi/apache-kafka:2.6.1
+    container_name: broker
+    hostname: broker
+    networks:
+      - atlas_cluster
+    ports:
+      - "19092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/broker:9092
+      ZOOKEEPER_CONNECT_LIST: "zookeeper:2181"
+    command: kafka
+
+  mysql:
+    image: ashokkumarchoppadandi/mysql:latest
+    container_name: mysql
+    networks:
+      - atlas_cluster
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@123
+      MYSQL_DATABASE: metastore
+ 
+  hadoop:
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8
+    container_name: hadoop
+    hostname: hadoop
+    networks:
+      - atlas_cluster
+    ports:
+      - "50070:50070"
+      - "50030:50030"
+      - "18088:8088"
+      - "19888:19888"
+      - "18042:18042"
+      - "35945:35945"
+      - "14040:4040"
+      - "10002:10002"
+    depends_on:
+      - mysql
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/hadoop:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: hadoop
+      HISTORY_SERVER_HOST: hadoop
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql:\/\/mysql\/metastore?createDatabaseIfNotExist=true
+    command:
+      - sh
+      - hive
+ 
+  hbase:
+    image: ashokkumarchoppadandi/apache-hbase:2.4.9
+    container_name: hbase
+    hostname: hbase
+    networks:
+      - atlas_cluster
+    ports:
+      - "16010:16010"
+      - "16030:16030"
+    depends_on:
+      - zookeeper
+      - hadoop
+    environment:
+      HBASE_ROOT_DIR: hdfs:\/\/hadoop:9000\/hbase
+      HBASE_CLUSTER_DISTRIBUTED: "true"
+      ZOOKEEPER_QUORUM: zookeeper:2181
+    command:
+      - distributed
+      - all
+  
+  solr:
+    image: ashokkumarchoppadandi/apache-solr:8.11.1
+    container_name: solr
+    hostname: solr
+    networks:
+      - atlas_cluster
+    ports:
+      - "8983:8983"
+    depends_on:
+      - zookeeper
+    environment:
+      MEMORY: 1g
+      ZOOKEEPER_QUORUM: zookeeper:2181
+      SOLR_PORT: 8983
+    command:
+      - cloud
+  
+  atlas:
+    image: ghcr.io/hritvikpatel4/apache-atlas:master
+    container_name: atlas
+    hostname: atlas
+    networks:
+      - atlas_cluster
+    ports:
+      - "21000:21000"
+    depends_on:
+      - zookeeper
+      - broker
+      - hadoop
+      - hbase
+      - solr
+    environment:
+      HBASE_TABLE: apache_atlas_janus
+      ZK_QUORUM: zookeeper:2181
+      KAFKA_BOOTSTRAP_SERVERS: broker:9092
+      HOSTNAME: atlas
+      SOLR_HOST: solr
+      SOLR_PORT: 8983
+    command: atlas_start
