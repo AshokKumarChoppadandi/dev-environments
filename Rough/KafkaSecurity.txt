@@ -96,9 +96,9 @@ Step 3 :
 
         ll /home/bigdata/ssl/
 
-        cat /home/bigdata/ssl/ca.cert   # Private Key
+        cat /home/bigdata/ssl/ca.cert   # Public Key
 
-        cat /home/bigdata/ssl/ca-key    # Public Key
+        cat /home/bigdata/ssl/ca-key    # Private Key
 
 SSL in KAFKA:
 

@@ -1,0 +1,168 @@
+Hadoop (HDFS & YARN)
+--------------------
+
+1. What are the main Services or Daemons in Hadoop? 
+
+2. How to store a file from Edge Node to HDFS? 
+
+3. What is the background process when you run hdfs dfs -put <source_file> <target_location_on_hdfs>? 
+
+4. What is the concept called Rack Awareness? 
+
+5. What is the concept called Data Locality? 
+
+6. How Block Replicas are stored on the nodes based on Rack Awareness? 
+
+7. What is your cluster capacity in terms of Storage Capacity, Number of Nodes, Number of Cores & Total Memory? 
+
+8. What is an Application Master? 
+
+9. What is a Driver Program? 
+
+10. What is the difference between Yarn Client and Yarn Cluster mode? 
+
+11. What is the advantage of using Yarn Cluster mode over client mode for jobs running in Production? 
+
+12. What is block size in your cluster? 
+
+13. As Hadoop 2.x or YARN allows us to execute / run non-map-reduce jobs like Spark Applications. So when we submit a Application to YARN then who or what process will decide to run / execute a Spark Application or a Map Reduce Application??? 
+
+14. In HDFS if the replication factor is 3. Then what is the meaning: Is it the File replicated, or Block replicated 3 times? 
+
+Hive
+----
+
+1. How many types of tables are allowed to be created in Hive? 
+
+2. What is the difference between Managed & External table? 
+
+3. Scenario, in which case you go with a Managed and in which case with External Table? 
+
+4. What is the concept of Partitioning and Bucketing in Hive? 
+
+5. Query: Write a Query to create an External Table with below requirements?  
+
+    - Table Name: Employees 
+
+    - Columns: eid, ename, eage, esalary, edept 
+
+    - Partition Column: edept 
+
+    - Bucket Column: eage into 10 Buckets 
+
+    - Location: /user/hive/warehouse/db1.db/employees 
+
+6. What is Dynamic Partitioning? 
+
+7. Is Dynamic Partitioning supported in Hive by default? & What are the properties to set to enable Dynamic Partitioning in Hive? 
+
+8. What is a Map side join? and What happens when we use Map side join? Why is it an advantage? 
+
+9. Query: Write a query to load data from Employees_RAW table to Employees (Above created) using Dynamic Partitioning? 
+
+10. Query: Write a query to add the partition to the Employees table, if the data is already located in a different location? 
+
+ 	Ex: /user/hive/warehouse/db1.db/employees/edept=1234 
+
+11. How is a Hive Query executed in the background when we submit from Hive CLI or Beeline CLI? 
+
+12. What is the file format you used in your project and what is the reason for choosing that file format? 
+
+13. What are Bloom filters?
+
+SPARK
+-----
+
+1. What are the different APIs that are provided by Spark to write our code? 
+
+2. What is difference betwen RDD vs Dataframe vs Dataset ?
+
+3. What is Lazy Evaluation and why it is important to Spark? 
+
+4. What is the difference between RDD Lineage & DAG? 
+
+5. What is a JOB, STAGE & TASK in a Spark Application? 
+
+6. What will be the Maximum number of TASKS which runs in Parallel for a Spark Application? 
+
+7. What is the difference between Persist & Cache?
+
+8. What is the need of Caching the data in Spark? 
+
+9. What is a Broadcast join?
+
+10. What is Transformation & Action? Name any 5 Transformations and Action on Dataframes not on RDDs?
+
+11. How many Categories of Window Functions are available in Spark?
+
+12. Coding : Write Spark code get Top 2 employees for each department based on their Salary?
+
+13. What is functionality of a Catalyst Optimizer or What will Catalyst Optimizer do?
+
+Scala
+-----
+
+1. What is the difference between val and var? 
+
+2. What is a First-Class Function in Scala? 
+
+3. What is a Singleton Object? 
+
+4. What is a Companion Object & Companion Class? 
+
+5. What is Currying? 
+
+6. What is a Higher Order Function? 
+
+7. What is a Partial Function? 
+
+8. What is the use Implicit variable? 
+
+9. What is the difference between Class & Case Class? 
+
+10. Coding: How do you declare a Function in Scala and what is its syntax? 
+
+11. Coding: How to create a list if two numbers are given?? 
+
+Example:	val num1 = 10 
+
+val num2 = 20 
+
+    		Result list = [11, 12, 13, ...., 20] 
+
+12. Coding: How to print the alternate numbers in a list using Slicing concept in Scala. 
+
+13. Coding: Write a program to print only the Prime Numbers from the above given list. 
+
+KAFKA:
+-----
+
+1. What is Kafka?
+
+2. How the data is stored in Kafka?
+
+3. What is a Topic, Partition & Offset in Kafka?
+
+4. Command: To create a Kafka Topic?
+
+5. In Kafka, brokers / servers are called as Bootstrap server?
+
+6. What is a Consumer Group?
+
+7. What is Idempotent Producer?
+
+8. What is a Leader and Follower? Is leader available for Each Topic or Node or Partition?
+
+9. How to read a specific message from Kafka Topic? or What are needed to read a particular message from given topic?
+
+10. What is ISR? And what will be an ideal value for ISR in Production?
+
+11. What is an Active Controller?
+
+12. What is role of Zookeeper / Zookeeper quorum in Kafka?
+
+13. What is the need of Schema Registry?
+
+14. What are the advantages of Avro File Format particularly in Kafka?
+
+15. What is Schema Evolution?

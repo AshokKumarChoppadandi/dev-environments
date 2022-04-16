@@ -1,0 +1,131 @@
+Schema Registry Setup:
+
+NOTE: Kafka Binaries are downloaded at /usr/local/confluent
+
+1. Schema Registry Proeprties file
+
+sudo cp /usr/local/confluent/etc/schema-registry/schema-registry.properties /opt/confluent/configs/
+
+sudo vi /opt/confluent/configs/schema-registry.properties
+
+# Copyright 2018 Confluent Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# The address the socket server listens on.
+#   FORMAT:
+#     listeners = listener_name://host_name:port
+#   EXAMPLE:
+#     listeners = PLAINTEXT://your.host.name:9092
+listeners=http://0.0.0.0:8081
+
+# Zookeeper connection string for the Zookeeper cluster used by your Kafka cluster
+# (see zookeeper docs for details).
+# This is a comma separated host:port pairs, each corresponding to a zk
+# server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002".
+# Note: use of this property is deprecated.
+#kafkastore.connection.url=localhost:2181
+
+# Alternatively, Schema Registry can now operate without Zookeeper, handling all coordination via
+# Kafka brokers. Use this setting to specify the bootstrap servers for your Kafka cluster and it
+# will be used both for selecting the leader schema registry instance and for storing the data for
+# registered schemas.
+# (Note that you cannot mix the two modes; use this mode only on new deployments or by shutting down
+# all instances, switching to the new configuration, and then starting the schema registry
+# instances again.)
+kafkastore.bootstrap.servers=SASL_SSL://worker1.bigdata.com:9094,SASL_SSL://worker2.bigdata.com:9094,SASL_SSL://worker3.bigdata.com:9094
+
+# Kerberos Required properties
+kafkastore.security.protocol=SASL_SSL
+kafkastore.sasl.kerberos.service.name=kafka
+
+# SSL Required Properties
+kafkastore.ssl.truststore.location=/home/bigdata/ssl_client/kafka.client.truststore.jks
+kafkastore.ssl.truststore.password=clientpassword
+kafkastore.ssl.keystore.location=/home/bigdata/ssl_client/kafka.client.keystore.jks
+kafkastore.ssl.keystore.password=clientpassword
+kafkastore.ssl.key.password=clientpassword
+
+# The name of the topic to store schemas in
+kafkastore.topic=_schemas2
+
+# If true, API requests that fail will include extra debugging information, including stack traces
+debug=true
+
+2. Kafka Clients SSL & Kerberos required properties are used which are already generated.
+
+3. For setting up Schema Registry as Service
+
+sudo vi /etc/systemd/system/schema-registry.service
+
+[Unit]
+Description=Setup Schema Registry Service
+
+[Service]
+User=root
+Group=root
+Environment="JMX_PORT=9582"
+Environment="SCHEMA_REGISTRY_JMX_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.rmi.port=9582"
+Environment="SCHEMA_REGISTRY_OPTS=-Djava.security.auth.login.config=/opt/confluent/configs/kafka_client_jaas.conf"
+ExecStart=/usr/local/confluent/bin/schema-registry-start /opt/confluent/configs/schema-registry.properties
+ExecStop=/usr/local/confluent/bin/schema-registry-stop
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+4. Reload
+
+sudo systemctl daemon-Reload
+
+5. Start the service
+
+sudo systemctl start schema-registry.service
+
+
+6. Create a Kafka Topic
+
+export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/zookeeper_jaas.conf"
+
+kafka-topics \
+    --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka \
+     --create \
+     --topic avro-topic-1 \
+     --replication-factor 3 \
+     --partitions 3
+
+7. Produce some messages
+
+export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_jaas.conf"
+
+kdestroy
+klist
+
+kinit -kt /home/bigdata/kerberos/kafka_client.user.keytab kafka@KAFKA.SECURE
+
+export SCHEMA_REGISTRY_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_jaas.conf"
+
+kafka-avro-console-producer \
+    --broker-list worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+    --topic Test \
+    --producer.config /home/bigdata/kerberos/kafka_client_kerberos_acl.properties \
+    --property schema.registry.url=http://192.168.0.112:8081 \
+    --property value.schema.id=2
+
+kafka-avro-console-consumer \
+    --bootstrap-server  worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+    --topic Test \
+    --from-beginning \
+    --consumer.config /home/bigdata/kerberos/kafka_client_kerberos_acl.properties \
+    --property schema.registry.url=http://192.168.0.112:8081

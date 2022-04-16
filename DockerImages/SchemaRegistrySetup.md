@@ -129,7 +129,7 @@ Example:
 ```
 {
     "type": "record",
-    "namespace: "com.bigdata.avro.example",
+    "namespace": "com.bigdata.avro.example",
     "name": "Customer",
     "doc": "Avro Schema for Customer",
     "fields": [
@@ -139,7 +139,6 @@ Example:
         { "name": "height", "type": "float", "doc": "Height of the Customer in cms" },
         { "name": "weight", "type": "float", "doc": "Weight of the Customer in kgs" },
         { "name": "automated_email", "type": "boolean", "default": true, "doc": "true if user wants an automated email" }
-
     ]
 }
 ```
@@ -297,3 +296,238 @@ NOTE: Logical types are new (1.7.7) not fully supported by all the languages.
 - Decimal is a floating decimal point type. They represent a number like this: 12345.67891234 (Some decimal values cannot be representd accurately with Floats and Doubles)
 - People use floats and doubles for scientific computations because they are fast.
 - Decimals are used for "Exactly Accurate" results.
+
+
+## Avro Record Types:
+
+### Generic Record
+
+### Specific Record
+
+- A Specific Record is also an Avro Object, but it is obtained using code generation from an Avro Schema
+
+- There are multiple plugins available for different build tools (Gradle, Maven, SBT, etc.,)
+
+- Maven is the official code generation tool for Apache Avro.
+
+    Avro Schema ----> Maven Plugin ----> Generated Java Code
+
+## Avro Tools
+
+- It is possible to read Avro files using the avro-tools commands.
+- The Avro Tools commands are very handy whenever want to display / print the data to our command line for a quick analysis of a content of an Avro file
+
+### Download Avro Tools
+
+Reference - https://downloads.apache.org/avro/
+
+```
+wget https://dlcdn.apache.org/avro/avro-1.11.0/java/avro-tools-1.11.0.jar
+```
+
+### Avro Tools Help
+
+```
+java -jar .\avro-tools-1.11.0.jar
+```
+
+<img src="../DockerImages/Screenshots/AvroToolsHelp.JPG" width="800">
+
+### Reading the Avro File
+
+Reading an Avro File of Generic Records
+
+```
+java -jar .\avro-tools-1.11.0.jar tojson --pretty .\src\main\resources\customers.avro
+```
+
+<img src="../DockerImages/Screenshots/AvroToolsGenericRecordPrint.JPG" width="800" height="300">
+
+Reading an Avro File of Specific Records
+
+```
+java -jar .\avro-tools-1.11.0.jar tojson --pretty .\src\main\resources\customers-specific.avro
+```
+
+<img src="../DockerImages/Screenshots/AvroToolsSpecificRecordPrint.JPG" width="800" height="300">
+
+### Getting the Avro Schema from an Avro File
+
+```
+java -jar .\avro-tools-1.11.0.jar getschema .\src\main\resources\customers.avro
+```
+
+<img src="../DockerImages/Screenshots/AvroToolsGetSchema.JPG" width="800">
+
+## Reflection in Avro
+
+Reflection is used in order to build Avro Schemas from the Java Class. It is useful when some class needs to be added to Avro Objects.
+
+```
+// ReflectedCustomer is POJO class with Constructor, Setters & Getters
+Schema schema = ReflectData.get().getSchema(ReflectedCustomer.class);
+```
+
+<img src="../DockerImages/Screenshots/ReflectedAvroSchema.JPG" width="800">
+
+## Schema Evolution
+
+There are 4 types of Schema Evolution:
+
+- Backward: When NEW schema is able to read the OLD data
+- Forward: When OLD schema is able to read the NEW data
+- Full: Which is both Forward & Backward
+- Breaking: None of the above
+
+### Backward Compatibility
+
+- It needs a default value
+
+Example:
+
+Old Schema:
+
+```
+{
+    "type": "record",
+    "namespace": "com.bigdata.avro.Customer",
+    "name": "Customer",
+    "doc": "Customer Details",
+    "version": "1",
+    "fields": [
+        { "name": "first_name", "type": "string", "doc": "Customer First Name" },
+        { "name": "last_name", "type": [ "null", "string" ], "doc": "Customer Last Name" },
+        { "name": "age", "type": "int", "doc": "Customer Age" },
+        { "name": "height", "type": "float", "doc": "Customer Height" },
+        { "name": "weight", "type": "float", "doc": "Customer Weight" },
+        { "name": "automated_email", "type": "boolean", "default": true, "doc": "If true Customer needs automated email" }
+    ]
+}
+```
+
+New Schema (Backward Compatible)
+
+```
+{
+    "type": "record",
+    "namespace": "com.bigdata.avro.Customer",
+    "name": "Customer",
+    "doc": "Customer Details",
+    "version": "2",
+    "fields": [
+        { "name": "first_name", "type": "string", "doc": "Customer First Name" },
+        { "name": "last_name", "type": [ "null", "string" ], "doc": "Customer Last Name" },
+        { "name": "age", "type": "int", "doc": "Customer Age" },
+        { "name": "height", "type": "float", "doc": "Customer Height" },
+        { "name": "weight", "type": "float", "doc": "Customer Weight" },
+        { "name": "automated_email", "type": "boolean", "default": true, "doc": "If true Customer needs automated email" },
+        { "name": "phone", "type": "string", "default": "123-456-7890", "doc": "Customer Phone Number" },
+    ]
+}
+```
+
+### Forward Compatibility
+
+- New Data can be read using Old Schema. Avro will just ignore the new fields.
+- Deleting fields without default fields is not Forward Compatible.
+
+Old Schema
+
+```
+{
+    "type": "record",
+    "namespace": "com.bigdata.avro.Customer",
+    "name": "Customer",
+    "doc": "Customer Details",
+    "version": "2",
+    "fields": [
+        { "name": "first_name", "type": "string", "doc": "Customer First Name" },
+        { "name": "last_name", "type": [ "null", "string" ], "doc": "Customer Last Name" },
+        { "name": "age", "type": "int", "doc": "Customer Age" },
+        { "name": "automated_email", "type": "boolean", "default": true, "doc": "If true Customer needs automated email" }
+    ]
+}
+```
+
+New Schema (Forward Compatible)
+
+```
+{
+    "type": "record",
+    "namespace": "com.bigdata.avro.Customer",
+    "name": "Customer",
+    "doc": "Customer Details",
+    "version": "1",
+    "fields": [
+        { "name": "first_name", "type": "string", "doc": "Customer First Name" },
+        { "name": "last_name", "type": [ "null", "string" ], "doc": "Customer Last Name" },
+        { "name": "age", "type": "int", "doc": "Customer Age" },
+        { "name": "height", "type": "float", "doc": "Customer Height" },
+        { "name": "weight", "type": "float", "doc": "Customer Weight" },
+        { "name": "automated_email", "type": "boolean", "default": true, "doc": "If true Customer needs automated email" }
+    ]
+}
+```
+
+### Full Compatibility
+
+- Only add new fields with "default"
+- Only remove fields which have "default"
+- It is always good practice to have "full comaptibility"
+
+Old Schema
+
+```
+{
+    "type": "record",
+    "namespace": "com.bigdata.avro.Customer",
+    "name": "Customer",
+    "doc": "Customer Details",
+    "version": "1",
+    "fields": [
+        { "name": "first_name", "type": "string", "doc": "Customer First Name" },
+        { "name": "last_name", "type": [ "null", "string" ], "doc": "Customer Last Name" },
+        { "name": "age", "type": "int", "doc": "Customer Age" },
+        { "name": "height", "type": "float", "doc": "Customer Height" },
+        { "name": "weight", "type": "float", "doc": "Customer Weight" },
+        { "name": "automated_email", "type": "boolean", "default": true, "doc": "If true Customer needs automated email" }
+    ]
+}
+```
+
+New Schema (Fully Compatible)
+
+```
+{
+    "type": "record",
+    "namespace": "com.bigdata.avro.Customer",
+    "name": "Customer",
+    "doc": "Customer Details",
+    "version": "2",
+    "fields": [
+        { "name": "first_name", "type": "string", "doc": "Customer First Name" },
+        { "name": "last_name", "type": [ "null", "string" ], "doc": "Customer Last Name" },
+        { "name": "age", "type": "int", "doc": "Customer Age" },
+        { "name": "height", "type": "float", "doc": "Customer Height" },
+        { "name": "weight", "type": "float", "doc": "Customer Weight" },
+        { "name": "automated_email", "type": "boolean", "default": true, "doc": "If true Customer needs automated email" },
+        { "name": "phone", "type": "string", "default": "123-456-7890", "doc": "Customer Phone Number" },
+    ]
+}
+```
+
+### Breaking / Not Compatible
+
+- Adding or removing elements from an ENUM.
+- Changing the type of a field (String => int).
+- Renaming a required field ( field without default)
+
+
+#### Important Points:
+
+- Make the primary key required (no defaults)
+- Provide default values to all the fields that could be removed in the future.
+- Careful in ENUMs as they cannot evolve.
+- Don't rename fields. Add aliases.
+- When evolving the schema, ALWAYS give default values.
+- When evolving the schema, NEVER delete a required field.
