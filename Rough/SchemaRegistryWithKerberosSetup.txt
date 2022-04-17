@@ -65,6 +65,15 @@ debug=true
 
 2. Kafka Clients SSL & Kerberos required properties are used which are already generated.
 
+KafkaClient {
+    com.sun.security.auth.module.Krb5LoginModule required
+    useKeyTab=true
+    storeKey=true
+    debug=true
+    keyTab="/home/bigdata/kerberos/kafka_client.user.keytab"
+    principal="kafka@KAFKA.SECURE";
+};
+
 3. For setting up Schema Registry as Service
 
 sudo vi /etc/systemd/system/schema-registry.service

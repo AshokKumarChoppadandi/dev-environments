@@ -1,0 +1,342 @@
+Kafka REST Proxy Setup With Kerberos Authentication
+
+NOTE: Kafka Binaries are downloaded at /usr/local/confluent
+
+1. Rest Proxy Properties file
+
+sudo cp /usr/local/confluent/etc/kafka-rest/kafka-rest.properties /opt/confluent/configs/kafka-rest/
+
+sudo vi /opt/confluent/configs/kafka-rest/kafka-rest.properties
+
+#
+# Copyright 2018 Confluent Inc.
+#
+# Licensed under the Confluent Community License (the "License"); you may not use
+# this file except in compliance with the License.  You may obtain a copy of the
+# License at
+#
+# http://www.confluent.io/confluent-community-license
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations under the License.
+#
+
+id=kafka-rest-server
+schema.registry.url=http://192.168.0.112:8081
+# zookeeper.connect=master1.bigdata.com:2181
+bootstrap.servers=SASL_SSL://worker1.bigdata.com:9094,SASL_SSL://worker2.bigdata.com:9094,SASL_SSL://worker3.bigdata.com:9094
+#
+# Configure interceptor classes for sending consumer and producer metrics to Confluent Control Center
+# Make sure that monitoring-interceptors-<version>.jar is on the Java class path
+#consumer.interceptor.classes=io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor
+#producer.interceptor.classes=io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
+
+# Authentication
+ssl.client.authentication=REQUIRED
+
+# Kerberos Required Properties
+client.security.protocol=SASL_SSL
+client.sasl.kerberos.service.name=kafka
+client.sasl.mechanism=GSSAPI
+
+# SSL Required Properties
+client.ssl.truststore.location=/home/bigdata/ssl_client/kafka.client.truststore.jks
+client.ssl.truststore.password=clientpassword
+client.ssl.keystore.location=/home/bigdata/ssl_client/kafka.client.keystore.jks
+client.ssl.keystore.password=clientpassword
+client.ssl.key.password=clientpassword
+client.ssl.truststore.type=JKS
+
+
+2. Kafka Clients SSL & Kerberos required properties are used which are already generated.
+
+sudo cat /opt/confluent/configs/kafka-rest/kafka_client_jaas.conf
+
+KafkaClient {
+    com.sun.security.auth.module.Krb5LoginModule required
+    useKeyTab=true
+    storeKey=true
+    debug=true
+    keyTab="/home/bigdata/kerberos/kafka_client.user.keytab"
+    principal="kafka@KAFKA.SECURE";
+};
+
+3. For setting up REST PROXY as Service
+
+sudo vi /etc/systemd/system/kafka-rest.service
+
+[Unit]
+Description=Setup Kafka REST Proxy Service
+
+[Service]
+User=root
+Group=root
+Environment="JMX_PORT=9583"
+Environment="KAFKAREST_OPTS=-Djava.security.auth.login.config=/opt/confluent/configs/kafka-rest/kafka_client_jaas.conf"
+ExecStart=/usr/local/confluent/bin/kafka-rest-start /opt/confluent/configs/kafka-rest/kafka-rest.properties
+ExecStop=/usr/local/confluent/bin/kafka-rest-stop
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+4. Reload
+
+sudo systemctl daemon-reload
+
+5. Start the Service
+
+sudo systemctl start kafka-rest.service
+
+6. Status of the Service
+
+sudo systemctl status kafka-rest.service
+
+7. Enabling the Service at boot time
+
+sudo systemctl enable kafka-rest.service
+
+8. Check the Status from Browser
+
+http://192.168.0.112:8082
+
+http://192.168.0.112:8082/topics
+
+http://192.168.0.112:8082/topics/test
+
+Produce and Consume Binary Messages
+
+Producing Binary Messages:
+
+echo "First message with base64 encoders" | base64
+
+Rmlyc3QgbWVzc2FnZSB3aXRoIGJhc2U2NCBlbmNvZGVycwo=
+
+curl -X POST -H "Content-Type: application/vnd.kafka.binary.v2+json" \
+      -H "Accept: application/vnd.kafka.v2+json" \
+      --data '{"records":[{"value":"Rmlyc3QgbWVzc2FnZSB3aXRoIGJhc2U2NCBlbmNvZGVycwo="}]}' "http://192.168.0.112:8082/topics/test"
+
+Output:
+
+{
+    "offsets":
+    [
+        {
+            "partition":0,
+            "offset":3,
+            "error_code":null,
+            "error":null
+        }
+    ],
+    "key_schema_id":null,
+    "value_schema_id":null
+}
+
+Consuming Binary Messages:
+
+Creating the consumer:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.v2+json" \
+      --data '{"name": "rest_consumer_1", "format": "binary", "auto.offset.reset": "earliest"}' \
+      http://192.168.0.112:8082/consumers/rest_consumer_1
+
+Output:
+
+{
+    "instance_id":"rest_consumer_1",
+    "base_uri":"http://192.168.0.112:8082/consumers/rest_consumer_1/instances/rest_consumer_1"
+}
+
+Subscribe to the topic:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.v2+json" --data '{"topics":["test"]}' \
+      http://192.168.0.112:8082/consumers/rest_consumer_1/instances/rest_consumer_1/subscription
+
+
+Read the records from the topic:
+
+curl -X GET -H "Accept: application/vnd.kafka.binary.v2+json" \
+      http://192.168.0.112:8082/consumers/rest_consumer_1/instances/rest_consumer_1/records
+
+Output :
+
+[
+    {
+        "topic":"test",
+        "key":null,
+        "value":"Rmlyc3QgbWVzc2FnZSBmcm9tIEphdmEgY29kZSBmb3IgYSBLZXJiZXJvcyBBdXRoZW50aWNhdGVkIFRvcGljIQ==",
+        "partition":1,
+        "offset":2
+    },
+    {
+        "topic":"test",
+        "key":null,
+        "value":"Rmlyc3QgbWVzc2FnZSB3aXRoIGJhc2U2NCBlbmNvZGVycwo=",
+        "partition":0,
+        "offset":3
+    }
+]
+
+Delete the Consumer Instance:
+
+curl -X DELETE -H "Content-Type: application/vnd.kafka.v2+json" \
+    http://192.168.0.112:8082/consumers/rest_consumer_1/instances/rest_consumer_1
+
+Produce and Consume JSON Messages
+
+Producing JSON Messages:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" \
+      -H "Accept: application/vnd.kafka.v2+json" \
+      --data '{"records":[{"value": {"message": "This is the message from REST PROXY"}}]}' "http://192.168.0.112:8082/topics/secure-topic-1"
+
+Output:
+
+{
+    "offsets":
+    [
+        {
+            "partition":2,
+            "offset":1,
+            "error_code":null,
+            "error":null
+        }
+    ],
+    "key_schema_id":null,
+    "value_schema_id":null
+}
+
+Consuming JSON Messages:
+
+Creating the consumer:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.v2+json" \
+      --data '{"name": "rest_consumer_2", "format": "json", "auto.offset.reset": "earliest"}' \
+      http://192.168.0.112:8082/consumers/rest_consumer_2
+
+Output:
+
+{
+    "instance_id":"rest_consumer_2",
+    "base_uri":"http://192.168.0.112:8082/consumers/rest_consumer_2/instances/rest_consumer_2"
+}
+
+Subscribe to the topic:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.v2+json" --data '{"topics":["secure-topic-1"]}' \
+      http://192.168.0.112:8082/consumers/rest_consumer_2/instances/rest_consumer_2/subscription
+
+Read the records from the topic:
+
+curl -X GET -H "Accept: application/vnd.kafka.json.v2+json" \
+      http://192.168.0.112:8082/consumers/rest_consumer_2/instances/rest_consumer_2/records
+
+Output :
+
+[
+    {
+        "topic":"secure-topic-1",
+        "key":null,
+        "value":
+        {
+            "message":"This is the message from REST PROXY"
+        },
+        "partition":2,
+        "offset":1
+    }
+]
+
+Delete the Consumer:
+
+curl -X DELETE -H "Content-Type: application/vnd.kafka.v2+json" \
+    http://192.168.0.112:8082/consumers/rest_consumer_2/instances/rest_consumer_2
+
+
+Produce and Consume Avro Messages:
+
+Producing Avro Messages:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.avro.v2+json" \
+      -H "Accept: application/vnd.kafka.v2+json" \
+      --data '{"value_schema": "{\"type\": \"record\", \"name\": \"MyRecord1\", \"fields\": [{\"name\": \"f1\", \"type\": \"string\"}]}", "records": [{"value": {"f1": "This is the message from REST PROXY"}}]}' \
+      "http://192.168.0.112:8082/topics/Test"
+
+Output:
+
+{
+    "offsets":
+    [
+        {
+            "partition":0,
+            "offset":12,
+            "error_code":null,
+            "error":null
+        }
+    ],
+    "key_schema_id":null,
+    "value_schema_id":2
+}
+
+Consuming Avro Messages:
+
+Creating the consumer:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.v2+json" \
+      --data '{"name": "rest_consumer_3", "format": "avro", "auto.offset.reset": "earliest"}' \
+      http://192.168.0.112:8082/consumers/rest_consumer_3
+
+Output:
+
+{
+    "instance_id":"rest_consumer_3",
+    "base_uri":"http://192.168.0.112:8082/consumers/rest_consumer_3/instances/rest_consumer_3"
+}
+
+Subscribe to the topic:
+
+curl -X POST -H "Content-Type: application/vnd.kafka.v2+json" --data '{"topics":["Test"]}' \
+      http://192.168.0.112:8082/consumers/rest_consumer_3/instances/rest_consumer_3/subscription
+
+Read the records from the topic:
+
+curl -X GET -H "Accept: application/vnd.kafka.avro.v2+json" \
+      http://192.168.0.112:8082/consumers/rest_consumer_3/instances/rest_consumer_3/records
+
+Output:
+
+[
+    {
+        "topic":"Test",
+        "key":null,
+        "value": 
+        {
+            "f1":"This is the message from REST PROXY"
+        },
+        "partition":0,
+        "offset":12
+    }
+]
+
+Delete the Consumer:
+
+curl -X DELETE -H "Content-Type: application/vnd.kafka.v2+json" \
+    http://192.168.0.112:8082/consumers/rest_consumer_2/instances/rest_consumer_2
+
+
+NOTE:
+
+    To send messages with Key Schema and Value Schema
+
+    curl -X POST -H "Content-Type: application/vnd.kafka.avro.v2+json" \
+      -H "Accept: application/vnd.kafka.v2+json" \
+      --data '{"key_schema": "{\"name\":\"id\"  ,\"type\": \"int\"   }", "value_schema": "{\"type\": \"record\", \"name\": \"MyRecord1\", \"fields\": [{\"name\": \"f1\", \"type\": \"string\"}]}", "records": [{"key" : 1 , "value": {"name": "testUser"}}]}' \
+      "http://192.168.0.112:8082/topics/Test"
+    
+    To send message using the schema id:
+
+    curl -X POST -H "Content-Type: application/vnd.kafka.avro.v2+json" \
+      -H "Accept: application/vnd.kafka.v2+json" \
+      --data '{"value_schema_id": "2", "records": [{"key" : null , "value": {"f1": "One more message from Rest Proxy"}}]}' \
+      "http://192.168.0.112:8082/topics/Test"

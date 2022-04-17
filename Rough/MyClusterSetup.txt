@@ -76,7 +76,7 @@ worker2.bigdata.com                 Broker 202
 worker3.bigdata.com                 Broker 203
 worker3.bigdata.com                 Broker 204
 admin1.bigdata.com                  Admin Tools (Kafka Rolling Restart, YELP Tools, Kafka Utils) & CA, KDC & Kerberos Admin Server
-admin2.bigdata.com                  SSL Clients, Kerberos Clients
+admin2.bigdata.com                  SSL Clients, Kerberos Clients, Schema Registry and REST Proxy
 dockermanchine1.bigdata.com         Docker Services (Prometheus, ZooNavigator, AlertManager, CMAK, Grafana)
 
 
