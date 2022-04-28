@@ -1,0 +1,30 @@
+version: '3'
+
+networks:
+  atlas_cluster:
+    driver: bridge
+
+services:
+  atlas:
+    image: ghcr.io/hritvikpatel4/apache-atlas:master
+    container_name: atlas
+    hostname: atlas
+    networks:
+      - atlas_cluster
+    ports:
+      - "21000:21000"
+    environment:
+      HBASE_TABLE: apache_atlas_janus
+      KAFKA_BOOTSTRAP_SERVERS: 192.168.0.151:9092
+      HBASE_ZK_QUORUM: 192.168.0.151:2181
+      KAFKA_ZK_QUORUM: 192.168.0.151:2181\/kafka
+      SOLR_ZK_QUORUM: 192.168.0.151:2181\/solr
+      HOSTNAME: atlas
+      SOLR_HOST: 192.168.0.153
+      SOLR_PORT: 8983
+    extra_hosts:
+      - "node101.bigdata.com:192.168.0.151"
+      - "node102.bigdata.com:192.168.0.152"
+      - "node103.bigdata.com:192.168.0.153"
+      - "node104.bigdata.com:192.168.0.154"
+    command: cold_start

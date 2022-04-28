@@ -16,12 +16,15 @@ scrape_configs:
       - targets: ['127.0.0.1:9090'] ## IP Address of the localhost
   - job_name: 'node-exporter'
     static_configs:
-      # - targets: ['192.168.0.201:9100', '192.168.0.202:9100', '192.168.0.203:9100', '192.168.0.211:9100', '192.168.0.212:9100', '192.168.0.213:9100', '192.168.0.214:9100'] ## IP Address of the localhost
+      #      - targets: ['192.168.0.201:9100', '192.168.0.202:9100', '192.168.0.203:9100', '192.168.0.211:9100', '192.168.0.212:9100', '192.168.0.213:9100', '192.168.0.214:9100'] ## IP Address of the localhost
       - targets: ['192.168.0.201:9100', '192.168.0.202:9100', '192.168.0.203:9100', '192.168.0.211:9100', '192.168.0.212:9100', '192.168.0.213:9100'] ## IP Address of the localhost
   - job_name: 'kafka'
     static_configs:
-      # - targets: ['192.168.0.211:8090', '192.168.0.212:8090', '192.168.0.213:8090', '192.168.0.214:8090'] ## IP Address of the localhost
+      #      - targets: ['192.168.0.211:8090', '192.168.0.212:8090', '192.168.0.213:8090', '192.168.0.214:8090'] ## IP Address of the localhost
       - targets: ['192.168.0.211:8090', '192.168.0.212:8090', '192.168.0.213:8090'] ## IP Address of the localhost
   - job_name: 'zookeeper'
     static_configs:
-        - targets: [ '192.168.0.201:8090', '192.168.0.202:8090', '192.168.0.203:8090' ] ## IP Address of the localhost
+      - targets: [ '192.168.0.201:8090', '192.168.0.202:8090', '192.168.0.203:8090' ] ## IP Address of the localhost
+  - job_name: 'kafka-connect'
+    static_configs:
+      - targets: ['192.168.0.211:8100', '192.168.0.212:8100', '192.168.0.213:8100'] ## IP Address of the localhost
