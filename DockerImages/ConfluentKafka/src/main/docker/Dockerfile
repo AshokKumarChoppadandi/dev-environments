@@ -102,6 +102,8 @@ ENV KSQL_STREAMS_NUM_STREAM_THREADS 1
 ENV KSQL_SERVICE_ID default_
 ENV KSQL_SINK_PARTITIONS 4
 ENV KSQL_SINK_REPLICAS 1
+ENV KSQL_KSQL_EXTENSION_DIR "\/usr\/local\/confluent\/ext"
+ENV KSQL_KSQL_CONNECT_URL "http:\/\/localhost:8083"
 
 COPY ./confluent-kafka-docker-entrypoint.sh /
 RUN chmod +x /confluent-kafka-docker-entrypoint.sh

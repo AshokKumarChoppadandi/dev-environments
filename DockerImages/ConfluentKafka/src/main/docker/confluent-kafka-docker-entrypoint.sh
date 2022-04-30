@@ -44,7 +44,7 @@ start_zookeeper() {
     ;;
 
     * )
-      zookeeper_usage "${$ZOOKEEPER_SERVICE_TYPE,,}"
+      zookeeper_usage "${ZOOKEEPER_SERVICE_TYPE,,}"
     ;;
   esac
 
@@ -198,6 +198,8 @@ start_ksql_db() {
   sed -i -e "s/KSQL_SERVICE_ID/$KSQL_SERVICE_ID/" "${CONFIGS_DIR}"/ksql-server.properties
   sed -i -e "s/KSQL_SINK_PARTITIONS/$KSQL_SINK_PARTITIONS/" "${CONFIGS_DIR}"/ksql-server.properties
   sed -i -e "s/KSQL_SINK_REPLICAS/$KSQL_SINK_REPLICAS/" "${CONFIGS_DIR}"/ksql-server.properties
+  sed -i -e "s/KSQL_KSQL_EXTENSION_DIR/$KSQL_KSQL_EXTENSION_DIR/" "${CONFIGS_DIR}"/ksql-server.properties
+  sed -i -e "s/KSQL_KSQL_CONNECT_URL/$KSQL_KSQL_CONNECT_URL/" "${CONFIGS_DIR}"/ksql-server.properties
 
   "$CONFLUENT_HOME"/bin/ksql-server-start -daemon $CONFIGS_DIR/ksql-server.properties
   echo "Started Schema Registry Service..."

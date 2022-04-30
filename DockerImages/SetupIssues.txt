@@ -13,9 +13,12 @@ PostgresSQL:
         2. Initially PostgreSQL is accessed only with the postgres user (created at the time of installation)
         3. To access psql shell - sudo -iu postgres
         4. Create a User Role and Password
-             CREATE USER bigdata WITH PASSWORD 'bigdata';
+             CREATE USER bigdata WITH PASSWORD 'Bigdata@123';
+             CREATE DATABASE bigdatadb;
+             GRANT ALL PRIVILEGES ON DATABASE bigdatadb to bigdata;
         5. All other connections to access the PostgreSQL Server by making - listener_address = '*'
-        6. Edit pg_hba.conf to allow other user access the PostgreSQL Server from outside the node.
+           in /var/lib/pgsql/13/data/postgresql.conf file
+        6. Edit /var/lib/pgsql/13/data/pg_hba.conf to allow other user access the PostgreSQL Server from outside the node.
              # IPv4 local connections:
              host    all             all             127.0.0.1/32            md5
              host    all             all             0.0.0.0/0               md5
@@ -61,6 +64,10 @@ CentOS 8:
        sudo dnf --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos --allowerasing -y
 
        sudo dnf distro-sync -y
+
+       If the above steps doesn't work, download the latest GPG Keys rpm file from the below link:
+
+       http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/
 
 Rolling Restart:
 
