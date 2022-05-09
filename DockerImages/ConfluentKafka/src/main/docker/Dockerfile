@@ -105,6 +105,14 @@ ENV KSQL_SINK_REPLICAS 1
 ENV KSQL_KSQL_EXTENSION_DIR "\/usr\/local\/confluent\/ext"
 ENV KSQL_KSQL_CONNECT_URL "http:\/\/localhost:8083"
 
+# Installing HDFS 2 Sink Connector
+ARG HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL=https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-hdfs/versions/10.1.7/confluentinc-kafka-connect-hdfs-10.1.7.zip
+
+RUN yum install unzip -y \
+    && wget $HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL \
+    && unzip confluentinc-kafka-connect-hdfs-*.zip -d $CONFLUENT_HOME/share/java/ \
+    && rm -rf confluentinc-kafka-connect-hdfs-*.zip
+
 COPY ./confluent-kafka-docker-entrypoint.sh /
 RUN chmod +x /confluent-kafka-docker-entrypoint.sh
 

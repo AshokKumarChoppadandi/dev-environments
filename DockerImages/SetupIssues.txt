@@ -6,6 +6,11 @@ Elasticsearch :
 
     Need to set vm.max_map_count=262144
 
+    Docker Desktop for Windows:
+
+    wsl -d docker-desktop
+    sysctl -w vm.max_map_count=262144
+
 PostgresSQL:
 
     To access PostgreSQL outside the node i.e., from different server:

@@ -134,6 +134,8 @@ start_hiveslavenode() {
 
   schematool -dbType mysql -initSchema --verbose
 
+  hdfs dfs -chmod -R 777 /
+
   sleep 10
 
   hive --service hiveserver2 --hiveconf hive.root.logger=DRFA --hiveconf hive.log.level=DEBUG &
