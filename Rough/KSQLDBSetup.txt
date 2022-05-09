@@ -1,0 +1,177 @@
+#
+# Copyright 2019 Confluent Inc.
+#
+# Licensed under the Confluent Community License (the "License"); you may not use
+# this file except in compliance with the License.  You may obtain a copy of the
+# License at
+#
+# http://www.confluent.io/confluent-community-license
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations under the License.
+#
+
+#------ Endpoint config -------
+
+# Service ID
+ksql.service.id=mylocalkafka
+
+### HTTP  ###
+# The URL the KSQL server will listen on:
+# The default is any IPv4 interface on the machine.
+# NOTE: If set to wildcard or loopback set 'advertised.listener' to enable pull queries across machines
+listeners=http://0.0.0.0:8088
+
+# Use the 'listeners' line below for any IPv6 interface on the machine.
+# listeners=http://[::]:8088
+
+# If running a multi-node cluster across multiple machines and 'listeners' is set to a wildcard or loopback address
+# 'advertised.listener' must be set to the URL other KSQL nodes should use to reach this node.
+advertised.listener=http://worker1.bigdata.com:8088
+
+### HTTPS ###
+# To switch KSQL over to communicating using HTTPS comment out the 'listeners' line above
+# uncomment and complete the properties below.
+# See: https://docs.ksqldb.io/en/latest/operate-and-deploy/installation/server-config/security/#configure-the-cli-for-https
+#
+# listeners=https://0.0.0.0:8088
+# advertised.listener=?
+ssl.keystore.location=/home/bigdata/ssl_client/kafka.client.keystore.jks
+ssl.keystore.password=clientpassword
+ssl.key.password=clientpassword
+
+ssl.truststore.location=/home/bigdata/ssl_client/kafka.client.truststore.jks
+ssl.truststore.password=clientpassword
+
+ssl.client.auth=true
+ssl.endpoint.identification.algorithm=
+
+security.protocol=SASL_SSL
+sasl.mechanism=GSSAPI
+sasl.kerberos.service.name=kafka
+
+#------ Logging config -------
+
+# Automatically create the processing log topic if it does not already exist:
+ksql.logging.processing.topic.auto.create=true
+
+# Automatically create a stream within KSQL for the processing log:
+ksql.logging.processing.stream.auto.create=true
+
+# Uncomment the following if you wish the errors written to the processing log to include the
+# contents of the row that caused the error.
+# Note: care should be taken to restrict access to the processing topic if the data KSQL is
+# processing contains sensitive information.
+ksql.logging.processing.rows.include=true
+
+#------ External service config -------
+
+# The set of Kafka brokers to bootstrap Kafka cluster information from:
+bootstrap.servers=SASL_SSL://worker1.bigdata.com:9094,SASL_SSL://worker2.bigdata.com:9094,SASL_SSL://worker3.bigdata.com:9094
+
+# Enable snappy compression for the Kafka producers
+compression.type=snappy
+
+# uncomment the below to start an embedded Connect worker
+# ksql.connect.worker.config=config/connect.properties
+# ksql.connect.configs.topic=ksql-connect-configs
+
+# Uncomment and complete the following to enable KSQL's integration to the Confluent Schema Registry:
+ksql.schema.registry.url=http://admin2.bigdata.com:8081
+
+# Enable User Interface
+ui.enabled=true
+
+# Determines what to do when there is no initial offset
+ksql.streams.auto.offset.reset=latest
+
+#------ Following configs improve performance and reliability of KSQL for critical/production setups. -------
+
+# Also see: https://docs.confluent.io/current/ksql/docs/installation/server-config/config-reference.html#recommended-ksql-production-settings
+
+# A list of host and port pairs that is used for establishing the initial connection to the Kafka cluster
+ksql.streams.bootstrap.servers=SASL_SSL://worker1.bigdata.com:9094,SASL_SSL://worker2.bigdata.com:9094,SASL_SSL://worker3.bigdata.com:9094
+
+# Set the batch expiry to Integer.MAX_VALUE to ensure that queries will not
+# terminate if the underlying Kafka cluster is unavailable for a period of
+# time.
+ksql.streams.producer.delivery.timeout.ms=2147483647
+
+# Set the maximum allowable time for the producer to block to
+# Long.MAX_VALUE. This allows KSQL to pause processing if the underlying
+# Kafka cluster is unavailable.
+ksql.streams.producer.max.block.ms=9223372036854775807
+
+# For better fault tolerance and durability, set the replication factor and minimum insync replicas
+# for the KSQL Server's internal topics.
+# Note: the value 3 requires at least 3 brokers in your Kafka cluster.
+ksql.internal.topic.replicas=3
+ksql.internal.topic.min.insync.replicas=2
+
+# Configure underlying Kafka Streams internal topics in order to achieve better fault tolerance and
+# durability, even in the face of Kafka broker failures. Highly recommended for mission critical applications.
+# Note that value 3 requires at least 3 brokers in your kafka cluster
+# See https://docs.confluent.io/current/streams/developer-guide/config-streams.html#recommended-configuration-parameters-for-resiliency
+ksql.streams.replication.factor=3
+ksql.streams.producer.acks=all
+ksql.streams.topic.min.insync.replicas=2
+
+# Set the storage directory for stateful operations like aggregations and
+# joins to be at a durable location. By default, they are stored in /tmp.
+# Note that the path below needs to be replaced with the actual value
+ksql.streams.state.dir=/opt/confluent/ksqldb
+
+# Bump the number of replicas for state storage for stateful operations
+# like aggregations and joins. By having two replicas (one active and one
+# standby) recovery from node failures is quicker since the state doesn't
+# have to be rebuilt from scratch. This configuration is also essential for
+# pull queries to be highly available during node failures
+ksql.streams.num.standby.replicas=1
+
+# Indicates whether to fail if corrupt messages are read. KSQL decodes messages at runtime when reading from a Kafka topic
+ksql.fail.on.deserialization.error=false
+
+
+
+
+[Unit]
+Description=Setup KSQLDB Service
+
+[Service]
+User=root
+Group=root
+Environment="JMX_PORT=9585"
+Environment="KSQL_OPTS=-Djava.security.auth.login.config=/opt/confluent/configs/ksqldb/kafka_client_jaas.conf"
+ExecStart=/usr/local/confluent/bin/ksql-server-start /opt/confluent/configs/ksqldb/ksql-server.properties
+ExecStop=/usr/local/confluent/bin/ksql-server-stop
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+export KSQL_OPTS="-Djava.security.auth.login.config=/opt/confluent/configs/ksqldb/kafka_client_jaas.conf"
+
+
+KafkaClient {
+    com.sun.security.auth.module.Krb5LoginModule required
+    useKeyTab=true
+    storeKey=true
+    debug=true
+    keyTab="/home/bigdata/kerberos/kafka.service.keytab"
+    principal="kafka@KAFKA.SECURE";
+};
+
+
+
+CREATE STREAM riderLocations (profileId VARCHAR, latitude DOUBLE, longitude DOUBLE)
+  WITH (kafka_topic='riderLocations', value_format='json', partitions=3, replicas=3);
+
+
+INSERT INTO riderLocations (profileId, latitude, longitude) VALUES ('c2309eec', 37.7877, -122.4205);
+INSERT INTO riderLocations (profileId, latitude, longitude) VALUES ('18f4ea86', 37.3903, -122.0643);
+INSERT INTO riderLocations (profileId, latitude, longitude) VALUES ('4ab5cbad', 37.3952, -122.0813);
+INSERT INTO riderLocations (profileId, latitude, longitude) VALUES ('8b6eae59', 37.3944, -122.0813);
+INSERT INTO riderLocations (profileId, latitude, longitude) VALUES ('4a7c7b41', 37.4049, -122.0822);
+INSERT INTO riderLocations (profileId, latitude, longitude) VALUES ('4ddad000', 37.7857, -122.4011);

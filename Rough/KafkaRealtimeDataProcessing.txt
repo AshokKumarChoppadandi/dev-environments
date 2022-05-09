@@ -1,0 +1,269 @@
+export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/zookeeper_jaas.conf"
+
+kafka-topics --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka --list
+
+kafka-topics --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka --create --topic logs-test --partitions 10 --replication-factor 3
+
+kafka-topics --zookeeper master1.bigdata.com:2181,master2.bigdata.com:2181,master3.bigdata.com:2181/kafka --describe --topic logs-test
+
+export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_jaas.conf"
+export SCHEMA_REGISTRY_OPTS="-Djava.security.auth.login.config=/home/bigdata/kerberos/kafka_client_jaas.conf"
+
+kafka-avro-console-consumer \
+  --bootstrap-server  worker1.bigdata.com:9094,worker2.bigdata.com:9094,worker3.bigdata.com:9094 \
+  --topic logs-test \
+  --from-beginning \
+  --consumer.config /home/bigdata/kerberos/kafka_client_kerberos_acl.properties \
+  --property schema.registry.url=http://192.168.0.112:8081
+
+CREATE STREAM EDGAR_LOGS_STREAM WITH (
+    KAFKA_TOPIC='logs-test',
+    VALUE_FORMAT='AVRO'
+);
+
+
+DESCRIBE EDGAR_LOGS_STREAM;
+DESCRIBE EXTENDED EDGAR_LOGS_STREAM;
+SELECT * FROM EDGAR_LOGS_STREAM EMIT CHANGES;
+
+CREATE STREAM LOGS_FORMATTED WITH (
+  KAFKA_TOPIC = 'edgar-logs-formatted',
+  VALUE_FORMAT = 'AVRO',
+  PARTITIONS = 3,
+  REPLICAS = 3
+) AS 
+SELECT 
+  IP AS IP_ADDRESS, 
+  `DATE` AS REQUEST_DATE, 
+  `TIME` AS REQUEST_TIME,
+  GET_WINDOW(`DATE` + ' ' + `TIME`, 5) AS FIVE_MINUTE_WINDOW,
+  CASE 
+    WHEN ZONE IS NOT NULL THEN CAST( CAST( ZONE AS DOUBLE ) AS INT )
+    ELSE -1
+  END AS ZONE,
+  CASE 
+    WHEN CIK IS NOT NULL THEN CAST( CAST( CIK AS DOUBLE ) AS BIGINT )
+    ELSE CAST( '-1' AS BIGINT )
+  END AS CIK,
+  ACCESSION,
+  EXTENTION,
+  CASE 
+    WHEN CODE IS NOT NULL THEN CAST( CAST( CODE AS DOUBLE ) AS INT)
+    ELSE -1
+  END AS RESPONSE_CODE,
+  CASE 
+    WHEN `SIZE` IS NOT NULL THEN CAST( CAST( `SIZE` AS DOUBLE ) AS INT )
+    ELSE -1
+  END AS RESPONSE_BYTES_SIZE,
+  CASE 
+    WHEN IDX IS NOT NULL THEN CAST( IDX AS DOUBLE)
+    ELSE CAST('-1.0' AS DOUBLE)
+  END AS IDX,
+  CASE 
+    WHEN NOREFER IS NOT NULL THEN CAST (NOREFER AS DOUBLE)
+    ELSE CAST('-1.0' AS DOUBLE)
+  END AS NOREFER,
+  CASE 
+    WHEN NOAGENT IS NOT NULL THEN CAST (NOAGENT AS DOUBLE)
+    ELSE CAST('-1.0' AS DOUBLE)
+  END AS NOAGENT,
+  CASE 
+    WHEN FIND IS NOT NULL THEN CAST (FIND AS DOUBLE)
+    ELSE CAST('-1.0' AS DOUBLE)
+  END AS FIND,
+  CASE 
+    WHEN CRAWLER IS NOT NULL THEN CAST (CRAWLER AS DOUBLE)
+    ELSE CAST('-1.0' AS DOUBLE)
+  END AS CRAWLER,
+  BROWSER
+FROM EDGAR_LOGS_STREAM EMIT CHANGES;
+
+
+DESCRIBE EXTENDED LOGS_FORMATTED;
+
+EXPLAIN CSAS_EDGAR_LOGS_FORMATTED_0;
+
+SELECT * FROM LOGS_FORMATTED EMIT CHANGES;
+
+
+CREATE TABLE AGGREGATED_EDGAR_LOGS AS 
+SELECT CAST(FIVE_MINUTE_WINDOW AS STRING) + '|+|' + CAST(ZONE AS STRING) + '|+|' + CAST(RESPONSE_CODE AS STRING) AS ROWKEY,
+COUNT(*) AS NUMBER_OF_REQUESTS
+FROM LOGS_FORMATTED
+GROUP BY CAST(FIVE_MINUTE_WINDOW AS STRING) + '|+|' + CAST(ZONE AS STRING) + '|+|' + CAST(RESPONSE_CODE AS STRING)
+EMIT CHANGES;
+
+
+DESCRIBE AGGREGATED_EDGAR_LOGS EXTENDED;
+
+SELECT * FROM AGGREGATED_EDGAR_LOGS EMIT CHANGES;
+
+
+
+{
+    "name": "edgar-logs-pg-sink",
+    "config": {
+        "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+        "dialect.name": "PostgreSqlDatabaseDialect",
+        "insert.mode": "upsert",
+        "batch.size": 3000,
+        "table.name.format": "${topic}",
+        "pk.mode": "record_key",
+        "pk.fields": "record_key",
+        "fields.whitelist": "",
+        "db.timezone": "UTC",
+        "connection.url": "jdbc:postgresql://192.168.0.144:5432/bigdatadb",
+        "connection.user": "bigdata",
+        "connection.password": "Bigdata@123",
+        "auto.create": "true",
+        "auto.evolve": "true",
+        "topics": "aggregated-edgar-logs",
+        "tasks.max": "5",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url": "http://192.168.0.112:8081",
+        "value.converter.schemas.enable": "true"
+    }
+}
+
+
+
+curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d @edgar-logs-pg-sink.json http://192.168.0.211:8083/connectors
+
+{
+  "name": "edgar-logs-es-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "connection.url": "http://elasticsearch01:9200",
+    "topics": "edgar-logs-formatted",
+    "tasks.max": "10",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schemaregistry:8081",
+    "value.converter.schemas.enable": "true",
+    "type.name": "_doc",
+    "batch.size": 2000,
+    "max.in.flight.requests": 5,
+    "max.buffered.records": 20000,
+    "linger.ms": 10,
+    "flush.timeout.ms": 180000,
+    "max.retries": 5,
+    "retry.backoff.ms": 100,
+    "connection.compression": false,
+    "max.connection.idle.time.ms": 60000,
+    "connection.timeout.ms": 1000,
+    "read.timeout.ms": 3000,
+    "key.ignore": true,
+    "schema.ignore": false,
+    "compact.map.entries": true,
+    "topic.schema.ignore": "edgar-logs-formatted",
+    "drop.invalid.message": true,
+    "behavior.on.null.values": "IGNORE",
+    "behavior.on.malformed.documents": "WARN",
+    "write.method": "upsert",
+    "transforms": "RenameField",
+    "transforms.RenameField.type": "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.RenameField.renames": "IP_ADDRESS:ip_address,REQUEST_DATE:request_date,REQUEST_TIME:request_time,REQUESTED_HOUR:requested_hour,ZONE:zone,CIK:cik,ACCESSION:accession,EXTENTION:extention,RESPONSE_CODE:response_code,RESPONSE_BYTES_SIZE:response_bytes_size,IDX:idx,NOREFER:norefer,NOAGENT:noagent,FIND:find,CRAWLER:crawler,BROWSER:browser"
+  }
+}
+
+curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d @edgar-logs-es-sink.json http://192.168.0.211:8083/connectors
+
+
+{
+  "name": "edgar-hdfs-orc-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.hdfs.HdfsSinkConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://192.168.0.112:8081",
+    "value.converter.schema.enable": "true",
+    "tasks.max": "10",
+    "topics": "edgar-logs-formatted",
+    "store.url": "hdfs://node102.bigdata.com:9000",
+    "logs.dir": "/tmp/logs1",
+    "topics.dir": "/user/hive/warehouse/edgar_logs1.db/",
+    "directory.delim": "/",
+    "format.class": "io.confluent.connect.hdfs.orc.OrcFormat",
+    "flush.size": "1000000",
+    "rotate.interval.ms": "60000",
+    "offset.storage.file.filename": "/tmp/connect1.offsets",
+    "offset.flush.interval.ms": "10000",
+    "transforms": "RenameField",
+    "transforms.RenameField.type": "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.RenameField.renames": "IP_ADDRESS:ip_address,REQUEST_DATE:request_date,REQUEST_TIME:request_time,REQUESTED_HOUR:requested_hour,ZONE:zone,CIK:cik,ACCESSION:accession,RESPONSE_CODE:response_code,RESPONSE_BYTES_SIZE:response_bytes_size,IDX:idx,NOREFER:norefer,NOAGENT:noagent,FIND:find,CRAWLER:crawler,BROWSER:browser",
+    "partitioner.class": "io.confluent.connect.storage.partitioner.FieldPartitioner",
+    "partition.field.name": "request_date"
+  }
+}
+
+curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d @edgar-logs-hdfs-orc-sink.json http://192.168.0.211:8083/connectors
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  "name": "edgar-logs-hdfs-orc-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.hdfs.HdfsSinkConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://admin2.bigdata.com:8081",
+    "value.converter.schema.enable": "true",
+    "tasks.max": "10",
+    "topics": "edgar-logs-formatted",
+    "store.url": "hdfs://node102.bigdata.com:9000",
+    "logs.dir": "/user/hive/warehouse/edgar_logs.db/",
+    "directory.delim": "/",
+    "format.class": "io.confluent.connect.hdfs.orc.OrcFormat",
+    "flush.size": "1000000",
+    "rotate.interval.ms": "60000",
+    "transforms": "RenameField",
+    "transforms.RenameField.type": "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.RenameField.renames": "IP_ADDRESS:ip_address,REQUEST_DATE:request_date,REQUEST_TIME:request_time,REQUESTED_HOUR:requested_hour,ZONE:zone,CIK:cik,ACCESSION:accession,RESPONSE_CODE:response_code,RESPONSE_BYTES_SIZE:response_bytes_size,IDX:idx,NOREFER:norefer,NOAGENT:noagent,FIND:find,CRAWLER:crawler,BROWSER:browser",
+    "partitioner.class": "io.confluent.connect.storage.partitioner.FieldPartitioner",
+    "partition.field.name": "request_date,requested_hour"
+  }
+}
+
+curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d @edgar-logs-hdfs-orc-sink.json http://192.168.0.211:8083/connectors
+
+
+
+
+curl -X DELETE http://192.168.0.211:8083/connectors/edgar-logs-pg-sink
+curl -X DELETE http://192.168.0.211:8083/connectors/edgar-logs-es-sink
+curl -X DELETE http://192.168.0.211:8083/connectors/edgar-logs-hdfs-orc-sink
+
+
+
+
+
+
+
+
+
+

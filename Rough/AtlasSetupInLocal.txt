@@ -1,0 +1,110 @@
+Setting up Atlas in Local using Virtual machines
+
+
+1. Create 3 Virtual Machines using Oracle Virtual Box
+
+    Nodes details:
+
+                            Node 1                  Node 2                  Node 3
+
+        OS              Centos 7 (Minimal)      Centos 7 (Minimal)      Centos 7 (Minimal)
+        CPUs            2                       4                       4
+        RAM             4GB                     8GB                     8GB
+        Disk            20GB                    20GB                    20GB
+        Network         Bridged Adapter         Bridged Adapter         Bridged Adapter
+
+        Hostname        node1.bigdata.com       node2.bigdata.com       node3.bigdata.com
+        User            bigdata                 bigdata                 bigdata
+        Password        Bigdata@123             Bigdata@123             Bigdata@123
+        Root Password   Bigdata@123             Bigdata@123             Bigdata@123
+
+2. Setup Static IPs
+
+
+    Node 1  ->  192.168.0.151
+
+    Node 2  ->  192.168.0.152
+
+    Node 3  ->  192.168.0.153
+
+3. Add bigdata as a sudo user
+
+4. Update the OS
+
+    sudo yum update -y
+
+5. Install Java 8
+
+    sudo yum install java-1.8.0-openjdk-devel -y
+
+6. Services Selection
+
+    Node 1  ->      Apache Zookeeper & Apache Kafka
+
+    Node 2  ->      Apache Hadoop, MySQL, Apache Hive & Apache HBase
+
+                    MySQL: 
+
+                    User                Password
+
+                    root                Bigdata@123
+                    hive                Hive@123
+
+    Node 3  ->      Apache Solr
+
+
+NODE 101:
+=======
+
+Apache Zookeeper & Apache Kafka Installation
+
+
+NODE 102:
+=========
+
+
+
+
+CREATE USER 'hive'@'%' IDENTIFIED BY 'Hive@123';
+CREATE USER 'hive'@'localhost' IDENTIFIED BY 'Hive@123';
+CREATE USER 'hive'@'127.0.0.1' IDENTIFIED BY 'Hive@123';
+CREATE USER 'hive'@'*' IDENTIFIED BY 'Hive@123';
+
+GRANT all privileges on *.* to 'hive'@'%';
+GRANT all privileges on *.* to 'hive'@'localhost';
+GRANT all privileges on *.* to 'hive'@'127.0.0.1';
+GRANT all privileges on *.* to 'hive'@'*';
+
+
+sudo /usr/local/hbase/bin/hbase-daemon.sh start master
+sudo /usr/local/hbase/bin/hbase-daemon.sh start regionserver
+
+
+<configuration>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>hdfs://192.168.0.152:9000/hbase</value>
+    </property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>192.168.0.151:2181/hbase</value>
+    </property>
+    <property>
+        <name>hbase.tmp.dir</name>
+        <value>/usr/local/hbase/tmp</value>
+    </property>
+</configuration>
+
+
+
+
+curl -X GET "http://192.168.0.153:8983/solr/admin/collections?action=CREATE&name=vertex_index&numShards=1&replicationFactor=1&collection.configName=_default"
+
+        
+curl -X GET "http://192.168.0.153:8983/solr/admin/collections?action=CREATE&name=edge_index&numShards=1&replicationFactor=1&collection.configName=_default"
+
+curl -X GET "http://192.168.0.153:8983/solr/admin/collections?action=CREATE&name=fulltext_index&numShards=1&replicationFactor=1&collection.configName=_default"
