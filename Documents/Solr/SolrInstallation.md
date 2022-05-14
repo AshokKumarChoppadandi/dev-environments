@@ -226,7 +226,7 @@ Upload the solr.xml file to chroot in Zookeeper
 bin/solr zk cp file:/home/bigdata/solr-8.11.1/server/solr/solr.xml zk:/solr/ -z node101.bigdata.com:3181
 ```
 
-### Install Solr:
+Installing Solr using `install_solr_service.sh` script
 
 ```
 sudo bin/install_solr_service.sh -help
@@ -266,7 +266,6 @@ SOLR_IP_WHITELIST=192.168.0.0/24
 SOLR_OPTS="$SOLR_OPTS -Dsolr.environment=dev,label=MyDev,color=blue"
 ```
 
-
 NOTE: The fields file `solr.in.sh` will be created by the installation script (./install_solr_service.sh) at location `/etc/default/solr.in.sh`. The name is given based on the service name as follows:
 
 ```
@@ -274,7 +273,6 @@ sudo bin/install_solr_service.sh solr-8.11.0.tgz -i /opt -d /var/test-solr -u so
 ```
 
 Then the include file name will be `test-solr.in.sh`
-
 
 ### Check the Solr Service status
 
@@ -294,3 +292,53 @@ sudo service solr stop
 sudo service solr restart
 ```
 
+## Securing Solr
+
+### Create a SOLR password from the below link:
+
+```
+https://clemente-biondo.github.io/
+```
+
+<img src="SolrPasswordGeneration.JPG" />
+
+### Create a security.json file with user credentials
+
+`vi security.json`
+
+```
+{
+"authentication":{
+   "blockUnknown": true,
+   "class":"solr.BasicAuthPlugin",
+   "credentials":{"solr":"IV0EHq1OnNrj6gvRCwvFwTrZ1+z1oBbnQdiVC3otuq0= Ndd7LKvVBAaZIF0QAVi1ekCfAJXr1GGfLtRUXhgrF8c="},
+   "realm":"My Solr users",
+   "forwardCredentials": false
+},
+"authorization":{
+   "class":"solr.RuleBasedAuthorizationPlugin",
+   "permissions":[{"name":"security-edit",
+      "role":"admin"}],
+   "user-role":{"solr":"admin"}
+}}
+```
+
+### Upload it to Zookeeper, if Solr is running in SolrCloud mode
+
+```
+solr zk cp file:/home/bigdata/security.json zk:/solr/security.json -z node101.bigdata.com:3181
+```
+
+### Validation
+
+Open the below URL in the browser:
+
+```
+http://192.168.0.153:8983
+
+    OR
+
+http://192.168.0.153:8993
+```
+
+The Solr Admin should ask for the login using Username and Password.
