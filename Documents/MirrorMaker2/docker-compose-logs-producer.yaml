@@ -1,0 +1,59 @@
+version: '3.5'
+
+networks:
+  adserver2:
+    name: adserver2
+    driver: bridge
+
+services:
+  apache-logs-producer:
+    image: ashokkumarchoppadandi/edgar-logs-kafka-producer:1.0-SNAPSHOT
+    hostname: apache-logs-producer
+    container_name: apache-logs-producer
+    networks:
+      - adserver2
+    environment:
+      BOOTSTRAP_SERVERS: PLAINTEXT:\/\/node001.dev.dpl.kafka.cnvr.net:9093,PLAINTEXT:\/\/node002.dev.dpl.kafka.cnvr.net:9093,PLAINTEXT:\/\/node003.dev.dpl.kafka.cnvr.net:9093
+      ACKS: all
+      RETRIES: 0
+      BATCH_SIZE: 16384
+      LINGER_MS: 1
+      BUFFER_MEMORY: 33554432
+      KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      VALUE_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      OUTPUT_FORMAT: csv
+      TOPIC_NAME: apache-logs
+      INPUT_LOGS_DIR: \/edgar\/input_logs\/
+      IS_CONFIGURING_PROPERTIES_REQUIRED: "yes"
+      IS_KERBEROS_AUTHENTICATION_REQUIRED: "no"
+      JAR_FILE_LOCATION: /java_examples/
+      JAR_NAME: KafkaExamples-1.0-SNAPSHOT.jar
+      RUN_CLASS: com.bigdata.kafka.producer.file.dynamic.EdgarLogsKafkaDynamicFileProducer
+    volumes:
+      - ./input_logs2/:/edgar/input_logs/:rw
+
+  tomcat-server-logs-producer:
+    image: ashokkumarchoppadandi/edgar-logs-kafka-producer:1.0-SNAPSHOT
+    hostname: tomcat-server-logs-producer
+    container_name: tomcat-server-logs-producer
+    networks:
+      - adserver2
+    environment:
+      BOOTSTRAP_SERVERS: PLAINTEXT:\/\/node004.dev.dpl.kafka.cnvr.net:9093,PLAINTEXT:\/\/node005.dev.dpl.kafka.cnvr.net:9093,PLAINTEXT:\/\/node006.dev.dpl.kafka.cnvr.net:9093
+      ACKS: all
+      RETRIES: 0
+      BATCH_SIZE: 16384
+      LINGER_MS: 1
+      BUFFER_MEMORY: 33554432
+      KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      VALUE_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      OUTPUT_FORMAT: csv
+      TOPIC_NAME: tomcat-server-logs
+      INPUT_LOGS_DIR: \/edgar\/input_logs\/
+      IS_CONFIGURING_PROPERTIES_REQUIRED: "yes"
+      IS_KERBEROS_AUTHENTICATION_REQUIRED: "no"
+      JAR_FILE_LOCATION: /java_examples/
+      JAR_NAME: KafkaExamples-1.0-SNAPSHOT.jar
+      RUN_CLASS: com.bigdata.kafka.producer.file.dynamic.EdgarLogsKafkaDynamicFileProducer
+    volumes:
+      - ./input_logs2/:/edgar/input_logs/:rw

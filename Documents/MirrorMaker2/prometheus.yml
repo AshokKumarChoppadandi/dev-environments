@@ -1,0 +1,91 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'cluster'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['127.0.0.1:9090'] ## IP Address of the localhost
+
+  - job_name: 'RDC Zookeeper'
+    static_configs:
+      - targets: ['node001.dev.dpl.kafka.cnvr.net:8090']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8090"
+        target_label: instance
+        replacement: '${1}'
+
+  - job_name: 'ORD Zookeeper'
+    static_configs:
+      - targets: ['node004.dev.dpl.kafka.cnvr.net:8090']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8090"
+        target_label: instance
+        replacement: '${1}'
+
+  - job_name: 'RDC Kafka Cluster'
+    static_configs:
+      - targets: ['node001.dev.dpl.kafka.cnvr.net:8095', 'node002.dev.dpl.kafka.cnvr.net:8095', 'node003.dev.dpl.kafka.cnvr.net:8095']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8095"
+        target_label: instance
+        replacement: '${1}'
+  
+  - job_name: 'ORD Kafka Cluster'
+    static_configs:
+      - targets: ['node004.dev.dpl.kafka.cnvr.net:8095', 'node005.dev.dpl.kafka.cnvr.net:8095', 'node006.dev.dpl.kafka.cnvr.net:8095']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8095"
+        target_label: instance
+        replacement: '${1}'
+  
+  - job_name: 'RDC 2 Kafka Cluster'
+    static_configs:
+      - targets: ['node001.dev.dpl.kafka.cnvr.net:8096', 'node002.dev.dpl.kafka.cnvr.net:8096', 'node003.dev.dpl.kafka.cnvr.net:8096']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8096"
+        target_label: instance
+        replacement: '${1}'
+  
+  - job_name: 'ORD 2 Kafka Cluster'
+    static_configs:
+      - targets: ['node004.dev.dpl.kafka.cnvr.net:8096', 'node005.dev.dpl.kafka.cnvr.net:8096', 'node006.dev.dpl.kafka.cnvr.net:8096']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8096"
+        target_label: instance
+        replacement: '${1}'
+
+  - job_name: 'Mirror Maker 2.0'
+    static_configs:
+      - targets: ['node007.dev.dpl.kafka.cnvr.net:8095']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8095"
+        target_label: instance
+        replacement: '${1}'
+  
+  - job_name: 'Mirror Maker 2.0 - 2'
+    static_configs:
+      - targets: ['node007.dev.dpl.kafka.cnvr.net:8096']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8096"
+        target_label: instance
+        replacement: '${1}'
+
+  - job_name: 'Mirror Maker 1.0'
+    static_configs:
+      - targets: ['node007.dev.dpl.kafka.cnvr.net:8090']
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):8090"
+        target_label: instance
+        replacement: '${1}'

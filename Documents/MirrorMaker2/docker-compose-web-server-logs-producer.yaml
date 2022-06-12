@@ -1,0 +1,33 @@
+version: '3.5'
+
+networks:
+  adserver:
+    name: adserver
+    driver: bridge
+
+services:
+  web-server-logs-producer:
+    image: ashokkumarchoppadandi/edgar-logs-kafka-producer:1.0-SNAPSHOT
+    hostname: web-server-logs-producer
+    container_name: web-server-logs-producer
+    networks:
+      - adserver
+    environment:
+      BOOTSTRAP_SERVERS: PLAINTEXT:\/\/node001.dev.dpl.kafka.cnvr.net:9092,PLAINTEXT:\/\/node002.dev.dpl.kafka.cnvr.net:9092,PLAINTEXT:\/\/node003.dev.dpl.kafka.cnvr.net:9092
+      ACKS: all
+      RETRIES: 0
+      BATCH_SIZE: 16384
+      LINGER_MS: 1
+      BUFFER_MEMORY: 33554432
+      KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      VALUE_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      OUTPUT_FORMAT: csv
+      TOPIC_NAME: web-server-logs
+      INPUT_LOGS_DIR: \/edgar\/input_logs\/
+      IS_CONFIGURING_PROPERTIES_REQUIRED: "yes"
+      IS_KERBEROS_AUTHENTICATION_REQUIRED: "no"
+      JAR_FILE_LOCATION: /java_examples/
+      JAR_NAME: KafkaExamples-1.0-SNAPSHOT.jar
+      RUN_CLASS: com.bigdata.kafka.producer.file.dynamic.EdgarLogsKafkaDynamicFileProducer
+    volumes:
+      - ./input_logs/:/edgar/input_logs/:rw

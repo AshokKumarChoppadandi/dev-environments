@@ -1,0 +1,38 @@
+version: '3.5'
+
+networks:
+  kafka_net1:
+    name: kafka_net1
+    driver: bridge
+
+services:
+  zookeeper-b:
+    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    container_name: zookeeper-b
+    networks:
+      - kafka_net1
+    ports:
+      - "22181:2181"
+    hostname: zookeeper-b
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    command:
+      - zookeeper
+      - standalone
+
+  broker-b:
+    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    container_name: broker-b
+    networks:
+      - kafka_net1
+    depends_on:
+      - zookeeper-b
+    hostname: broker-b
+    environment:
+      BROKER_ID: 0
+      KAFKA_LISTENERS: PLAINTEXT:\/\/0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT:\/\/broker-b:9092
+      ZOOKEEPER_CONNECT_LIST: "zookeeper-b:2181"
+    ports:
+      - "29092:9092"
+    command: kafka
