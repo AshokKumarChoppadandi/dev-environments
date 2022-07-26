@@ -50,7 +50,7 @@ Puppet Server               Java
 
 6.y and later	            8, 11
 
-7.y and later	            8,11
+7.y and later	            8, 11
 ```
 
 Install Java - OpenJDK 8
@@ -336,4 +336,55 @@ Restart the Puppet Agent:
 
 ```
 sudo systemctl restart puppet.service
+```
+
+## Setting up r10K
+
+### Install r10K
+
+```
+/opt/puppetlabs/puppet/bin/gem install r10k
+```
+
+### Add r10k to PATH
+
+```
+echo "export PUPPET_HOME=/opt/puppetlabs" >> /etc/profile
+echo "export PATH=$PATH:$PUPPET_HOME/bin:$PUPPET_HOME/puppet/bin" >> /etc/profile
+
+source /etc/profile
+```
+
+### Configuring r10k to GitHub repository
+
+NOTE: Create repository `control-repo` in GitHub, create branch with name `production` and make it is a `default` branch. Delete the `master` branch, becuase `Puppet / r10k` will not work with the `master` branch.
+
+#### Create r10k directory
+
+```
+mkdir /opt/puppetlabs/r10k
+```
+
+#### Create r10k.yaml configuration file
+
+```
+vi /opt/puppetlabs/r10k/r10k.yaml
+```
+
+Add the following configuration to `r10k.yaml`
+
+```
+---
+:cachedir: '/var/cache/r10k'
+
+:sources: 
+    :my-org:
+        remote: 'https://github.com/AshokKumarChoppadandi/control_repo.git'
+        baseurl: '/etc/puppetlabs/code/environments'
+```
+
+#### Deploy the repository to the Puppet Master
+
+```
+r10k deploy environment -p
 ```
