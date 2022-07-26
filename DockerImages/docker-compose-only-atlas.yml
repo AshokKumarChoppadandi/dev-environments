@@ -5,26 +5,61 @@ networks:
     driver: bridge
 
 services:
-  atlas:
+  atlas1:
     image: ghcr.io/hritvikpatel4/apache-atlas:master
-    container_name: atlas
-    hostname: atlas
+    # image: apache-atlas:2.2.0
+    container_name: atlas1
+    hostname: atlas1
     networks:
       - atlas_cluster
     ports:
-      - "21000:21000"
+      - "21001:21000"
     environment:
       HBASE_TABLE: apache_atlas_janus
       KAFKA_BOOTSTRAP_SERVERS: 192.168.0.151:9092
       HBASE_ZK_QUORUM: 192.168.0.151:2181
       KAFKA_ZK_QUORUM: 192.168.0.151:2181\/kafka
       SOLR_ZK_QUORUM: 192.168.0.151:2181\/solr
-      HOSTNAME: atlas
+      HOSTNAME: atlas1
       SOLR_HOST: 192.168.0.153
       SOLR_PORT: 8983
+      SERVER1_ADDR: atlas1:21000
+      SERVER2_ADDR: atlas2:21000
+      ATLAS_ZK_QUORUM: 192.168.0.151:2181
     extra_hosts:
       - "node101.bigdata.com:192.168.0.151"
       - "node102.bigdata.com:192.168.0.152"
       - "node103.bigdata.com:192.168.0.153"
       - "node104.bigdata.com:192.168.0.154"
-    command: cold_start
+    command:
+      - cold_start
+      - --ha
+  atlas2:
+    image: ghcr.io/hritvikpatel4/apache-atlas:master
+    # image: apache-atlas:2.2.0
+    container_name: atlas2
+    hostname: atlas2
+    networks:
+      - atlas_cluster
+    ports:
+      - "21002:21000"
+    environment:
+      HBASE_TABLE: apache_atlas_janus
+      KAFKA_BOOTSTRAP_SERVERS: 192.168.0.151:9092
+      HBASE_ZK_QUORUM: 192.168.0.151:2181
+      KAFKA_ZK_QUORUM: 192.168.0.151:2181\/kafka
+      SOLR_ZK_QUORUM: 192.168.0.151:2181\/solr
+      HOSTNAME: atlas2
+      SOLR_HOST: 192.168.0.153
+      SOLR_PORT: 8983
+      SERVER1_ADDR: atlas1:21000
+      SERVER2_ADDR: atlas2:21000
+      ATLAS_ZK_QUORUM: 192.168.0.151:2181
+    extra_hosts:
+      - "node101.bigdata.com:192.168.0.151"
+      - "node102.bigdata.com:192.168.0.152"
+      - "node103.bigdata.com:192.168.0.153"
+      - "node104.bigdata.com:192.168.0.154"
+    command:
+      - cold_start
+      - --ha
