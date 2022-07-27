@@ -10,6 +10,8 @@ For this hands-on, the following are the two Kafka Clusters used named as RDC & 
     * node004.dev.dpl.kafka.cnvr.net
     * node005.dev.dpl.kafka.cnvr.net
     * node006.dev.dpl.kafka.cnvr.net
+* Edge Node, MM1, MM2 & Monitoring 
+    * node007.dev.dpl.kafka.cnvr.net
 
 ## List Topics
 #### Cluster A - RDC:
