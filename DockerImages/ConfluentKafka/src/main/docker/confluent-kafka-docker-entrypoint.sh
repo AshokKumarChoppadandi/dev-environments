@@ -79,6 +79,8 @@ start_kafka_broker() {
   sed -i -e "s/BROKER_ID/$BROKER_ID/" "${CONFIGS_DIR}"/server.properties
   sed -i -e "s/KAFKA_LISTENERS/$KAFKA_LISTENERS/" "${CONFIGS_DIR}"/server.properties
   sed -i -e "s/KAFKA_ADVERTISED_LISTENERS/$KAFKA_ADVERTISED_LISTENERS/" "${CONFIGS_DIR}"/server.properties
+  sed -i -e "s/KAFKA_LISTENER_SECURITY_PROTOCOL_MAP/$KAFKA_LISTENER_SECURITY_PROTOCOL_MAP/" "${CONFIGS_DIR}"/server.properties
+  sed -i -e "s/KAFKA_INTER_BROKER_LISTENER_NAME/$KAFKA_INTER_BROKER_LISTENER_NAME/" "${CONFIGS_DIR}"/server.properties
   sed -i -e "s/NUM_NETWORK_THREADS/$NUM_NETWORK_THREADS/" "${CONFIGS_DIR}"/server.properties
   sed -i -e "s/NUM_IO_THREADS/$NUM_IO_THREADS/" "${CONFIGS_DIR}"/server.properties
   sed -i -e "s/SOCKET_SEND_BUFFER_BYTES/$SOCKET_SEND_BUFFER_BYTES/" "${CONFIGS_DIR}"/server.properties

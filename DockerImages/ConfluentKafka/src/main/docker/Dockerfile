@@ -36,8 +36,10 @@ ENV ZOOKEEPER_SYNC_LIMIT 2
 
 # KAFKA BROKER PROPERTIES
 ENV BROKER_ID 0
-ENV KAFKA_LISTENERS "PLAINTEXT:\/\/0.0.0.0:9092"
-ENV KAFKA_ADVERTISED_LISTENERS "PLAINTEXT:\/\/localhost:9092"
+ENV KAFKA_LISTENER_SECURITY_PROTOCOL_MAP "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+ENV KAFKA_LISTENERS "INTERNAL:\/\/0.0.0.0:9092,EXTERNAL:\/\/0.0.0.0:29092"
+ENV KAFKA_ADVERTISED_LISTENERS "INTERNAL:\/\/localhost:9092,EXTERNAL:\/\/localhost:29092"
+ENV KAFKA_INTER_BROKER_LISTENER_NAME "INTERNAL"
 ENV NUM_NETWORK_THREADS 3
 ENV NUM_IO_THREADS 8
 ENV SOCKET_SEND_BUFFER_BYTES 102400
@@ -108,13 +110,16 @@ ENV KSQL_KSQL_CONNECT_URL "http:\/\/localhost:8083"
 # Installing HDFS 2 Sink Connector
 ARG HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL=https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-hdfs/versions/10.1.7/confluentinc-kafka-connect-hdfs-10.1.7.zip
 
-RUN yum install unzip -y \
+RUN yum install unzip nc net-tools -y \
     && wget $HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL \
     && unzip confluentinc-kafka-connect-hdfs-*.zip -d $CONFLUENT_HOME/share/java/ \
     && rm -rf confluentinc-kafka-connect-hdfs-*.zip
 
 COPY ./confluent-kafka-docker-entrypoint.sh /
-RUN chmod +x /confluent-kafka-docker-entrypoint.sh
+COPY ./health_check.sh /
+RUN chmod +x /confluent-kafka-docker-entrypoint.sh \
+    && chmod +x /health_check.sh
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=5 CMD ./health_check.sh
 
 ENTRYPOINT ["./confluent-kafka-docker-entrypoint.sh"]
 CMD ["sh"]
