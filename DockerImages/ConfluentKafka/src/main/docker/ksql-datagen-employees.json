@@ -1,0 +1,60 @@
+{
+  "type":"record",
+  "name":"Employee",
+  "namespace":"com.bigdata.kafka.employee",
+  "fields":[
+    {
+      "name":"eid",
+      "type": {
+        "type": "int",
+        "arg.properties": {
+          "iteration": {
+            "start": 1,
+            "step": 1
+          }
+        }
+      }
+    }, {
+      "name":"ename",
+      "type": {
+        "type": "string",
+        "arg.properties": {
+          "regex": "user_\\d{1,5}"
+        }
+      }
+    }, {
+      "name":"esalary",
+      "type": {
+        "type": "int",
+        "arg.properties": {
+          "regex": "[0-9]",
+          "range": {
+            "min": 1000,
+            "max": 999999
+          }
+        }
+      }
+    }, {
+      "name":"edept",
+      "type": {
+        "type": "string",
+        "arg.properties": {
+          "regex": "dept_\\d{1,2}"
+        }
+      }
+    }, {
+      "name":"eage",
+      "type": {
+        "type": "int",
+        "arg.properties": {
+          "regex": "[0-9]",
+          "range": {
+            "min": 21,
+            "max": 65
+          }
+        }
+      }
+    }
+  ],
+  "doc":"Employee Details"
+}
