@@ -11,7 +11,9 @@ WORKDIR /home/hadoop
 
 LABEL maintainer="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" description="CentOS with HBASE installation"
 
-ENV HBASE_DOWNLOAD_URL https://dlcdn.apache.org/hbase/2.4.9/hbase-2.4.9-bin.tar.gz
+ARG HBASE_VERSION=2.4.9
+# ENV HBASE_DOWNLOAD_URL https://archive.apache.org/dist/hbase/1.4.9/hbase-1.4.9-bin.tar.gz
+ENV HBASE_DOWNLOAD_URL https://archive.apache.org/dist/hbase/${HBASE_VERSION}/hbase-${HBASE_VERSION}-bin.tar.gz
 
 ENV JAVA_HOME /usr/lib/jvm/java
 ENV HBASE_HOME /usr/local/hbase
@@ -42,6 +44,7 @@ COPY configs/* $HBASE_CONF_DIR/
 ENV HBASE_ROOT_DIR hdfs:\/\/localhost:9000\/hbase
 ENV HBASE_CLUSTER_DISTRIBUTED true
 ENV ZOOKEEPER_QUORUM localhost:2181
+ENV ZOOKEEPER_ZNODE_PARENT \/hbase
 
 COPY apache-hbase-docker-entrypoint.sh /home/hadoop/
 RUN chmod +x /home/hadoop/apache-hbase-docker-entrypoint.sh \

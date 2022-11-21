@@ -11,4 +11,8 @@
         <name>hbase.zookeeper.quorum</name>
         <value>ZOOKEEPER_QUORUM</value>
     </property>
+    <property>
+        <name>zookeeper.znode.parent</name>
+        <value>ZOOKEEPER_ZNODE_PARENT</value>
+    </property>
 </configuration>

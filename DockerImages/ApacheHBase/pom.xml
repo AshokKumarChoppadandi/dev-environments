@@ -29,12 +29,13 @@
         <docker.image.name>apache-hbase</docker.image.name>
         <startup.service>sh</startup.service>
 
-        <apache.hbase.download.url>https://dlcdn.apache.org/hbase/2.4.9/hbase-2.4.9-bin.tar.gz</apache.hbase.download.url>
+        <apache.hbase.download.url>https://archive.apache.org/dist/hbase/2.4.9/hbase-2.4.9-bin.tar.gz</apache.hbase.download.url>
         <hbase.home>/usr/local/apache-hbase</hbase.home>
         <hbase.config.dir>/usr/local/configs/</hbase.config.dir>
         <hbase.root.dir>hdfs://localhost:8020/hbase</hbase.root.dir>
         <hbase.cluster.distributed>true</hbase.cluster.distributed>
         <zookeeper.quorum>localhost:2181</zookeeper.quorum>
+        <zookeeper.znode.parent>/hbase</zookeeper.znode.parent>
     </properties>
 
     <build>
@@ -91,6 +92,7 @@
                                     <HBASE_ROOT_DIR>${hbase.root.dir}</HBASE_ROOT_DIR>
                                     <HBASE_CLUSTER_DISTRIBUTED>${hbase.cluster.distributed}</HBASE_CLUSTER_DISTRIBUTED>
                                     <ZOOKEEPER_QUORUM>${zookeeper.quorum}</ZOOKEEPER_QUORUM>
+                                    <ZOOKEEPER_ZNODE_PARENT>${zookeeper.znode.parent}</ZOOKEEPER_ZNODE_PARENT>
                                 </env>
                                 <hostname>${docker.container.hostname}</hostname>
                                 <network>

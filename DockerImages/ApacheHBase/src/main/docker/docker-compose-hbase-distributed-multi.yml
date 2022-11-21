@@ -169,6 +169,7 @@ services:
       HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
       HBASE_CLUSTER_DISTRIBUTED: "true"
       ZOOKEEPER_QUORUM: zookeeper:2181
+      ZOOKEEPER_ZNODE_PARENT: \/hbase
     command:
       - distributed
       - master
@@ -192,6 +193,7 @@ services:
       HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
       HBASE_CLUSTER_DISTRIBUTED: "true"
       ZOOKEEPER_QUORUM: zookeeper:2181
+      ZOOKEEPER_ZNODE_PARENT: \/hbase
     command:
       - distributed
       - regionserver
@@ -215,6 +217,7 @@ services:
       HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
       HBASE_CLUSTER_DISTRIBUTED: "true"
       ZOOKEEPER_QUORUM: zookeeper:2181
+      ZOOKEEPER_ZNODE_PARENT: \/hbase
     command:
       - distributed
       - regionserver
@@ -238,6 +241,7 @@ services:
       HBASE_ROOT_DIR: hdfs:\/\/namenode:9000\/hbase
       HBASE_CLUSTER_DISTRIBUTED: "true"
       ZOOKEEPER_QUORUM: zookeeper:2181
+      ZOOKEEPER_ZNODE_PARENT: \/hbase
     command:
       - distributed
       - regionserver
