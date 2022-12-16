@@ -6,8 +6,11 @@ USER root
 
 WORKDIR /
 
-ARG CONFLUENT_KAFKA_DOWNLOAD_URL=https://packages.confluent.io/archive/5.5/confluent-community-5.5.3-2.12.tar.gz?_ga=2.198249062.812666055.1638263298-1897962138.1637336693
+ARG CONFLUENT_MAJOR_VERSION=6.2
+ARG CONFLUENT_MINOR_VERSION=0
 
+# ENV CONFLUENT_KAFKA_DOWNLOAD_URL https://packages.confluent.io/archive/${CONFLUENT_MAJOR_VERSION}/confluent-community-${CONFLUENT_MAJOR_VERSION}.${CONFLUENT_MINOR_VERSION}-2.12.tar.gz
+ENV CONFLUENT_KAFKA_DOWNLOAD_URL https://packages.confluent.io/archive/${CONFLUENT_MAJOR_VERSION}/confluent-community-${CONFLUENT_MAJOR_VERSION}.${CONFLUENT_MINOR_VERSION}.tar.gz
 ENV CONFLUENT_HOME /usr/local/confluent
 
 RUN yum update -y \

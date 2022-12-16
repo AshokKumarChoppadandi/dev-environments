@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ConfluentKafka</artifactId>
-    <version>5.5.3</version>
+    <version>6.2.0</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -27,8 +27,9 @@
         <docker.hub.password>REPALCE_WITH_DOCKER_HUB_PASSWORD</docker.hub.password>
         <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
         <docker.image.name>confluent-kafka</docker.image.name>
-
-        <confluent.kafka.download.url>https://packages.confluent.io/archive/5.5/confluent-community-5.5.3-2.12.tar.gz?_ga=2.198249062.812666055.1638263298-1897962138.1637336693</confluent.kafka.download.url>
+        <confluent.major.version>6.2</confluent.major.version>
+        <confluent.minor.version>0</confluent.minor.version>
+        <confluent.kafka.download.url>https://packages.confluent.io/archive/${confluent.major.version}/confluent-community-${confluent.major.version}.${confluent.minor.version}.tar.gz</confluent.kafka.download.url>
         <confluent.home.dir>/usr/local/confluent</confluent.home.dir>
 
         <!-- Zookeeper Properties-->
@@ -126,7 +127,8 @@
                             <alias/>
                             <build>
                                 <args>
-                                    <APACHE_KAFKA_DOWNLOAD_URL>${confluent.kafka.download.url}</APACHE_KAFKA_DOWNLOAD_URL>
+                                    <CONFLUENT_MAJOR_VERSION>${confluent.major.version}</CONFLUENT_MAJOR_VERSION>
+                                    <CONFLUENT_MINOR_VERSION>${confluent.minor.version}</CONFLUENT_MINOR_VERSION>
                                 </args>
                                 <contextDir>${project.basedir}/src/main/docker/</contextDir>
                                 <!--<assembly>
@@ -140,6 +142,7 @@
 
                             <run>
                                 <env>
+                                    <APACHE_KAFKA_DOWNLOAD_URL>${confluent.kafka.download.url}</APACHE_KAFKA_DOWNLOAD_URL>
                                     <KAFKA_HOME>${confluent.home.dir}</KAFKA_HOME>
                                     <ZOOKEEPER_DATA_DIR>${zookeeper.data.dir}</ZOOKEEPER_DATA_DIR>
                                     <ZOOKEEPER_CLIENT_PORT>${zookeeper.client.port}</ZOOKEEPER_CLIENT_PORT>

@@ -6,7 +6,7 @@ networks:
 
 services:
   zookeeper:
-    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0
     networks:
       - kafka_cluster
     ports:
@@ -24,7 +24,7 @@ services:
       - standalone
 
   broker:
-    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0
     networks:
       - kafka_cluster
     depends_on:
@@ -58,7 +58,7 @@ services:
     command: kafka
 
   schemaregistry:
-    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0
     networks:
       - kafka_cluster
     depends_on:
@@ -75,7 +75,7 @@ services:
     command: schemaregistry
 
   connect:
-    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0
     networks:
       - kafka_cluster
     depends_on:
@@ -112,7 +112,7 @@ services:
     command: connect
 
   ksql:
-    image: ashokkumarchoppadandi/confluent-kafka:5.5.3
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0
     networks:
       - kafka_cluster
     depends_on:
