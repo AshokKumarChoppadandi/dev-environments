@@ -1,0 +1,25 @@
+<style>
+    .content {
+        max-width: 500px;
+        margin: auto;
+    }
+    h1 {text-align: center;}
+    h3 {text-align: center;}
+    div {text-align: center;}
+</style>
+<html>
+    <body>
+        <div class="content">
+            <img th:src="@{${'images/' + image}}"/>
+            <h3>This Spring Application Welcome page is hosted on:</h3>
+            <h1 th:text="${{server + ':8080'}}"></h1>
+            <br />
+            <h3>This Spring Application Welcome page is accessed from:</h3>
+            <h1 id="client"></h1>
+            <script>
+                let clientName = window.location.origin;
+                document.getElementById("client").innerHTML = clientName;
+            </script>
+        </div>
+    </body>
+</html>
