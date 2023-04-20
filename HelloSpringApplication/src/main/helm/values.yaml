@@ -1,0 +1,25 @@
+# Default values for hello-spring-app-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ashokkumarchoppadandi/hello-spring-app
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "v1.0"
+
+resources:
+  cpu: 1
+  memory: 512Mi
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 31000
+
+configmap:
+  app:
+    version1: v1
+    version2: v2
