@@ -6,11 +6,15 @@
     h1 {text-align: center;}
     h3 {text-align: center;}
     div {text-align: center;}
+    .image {
+        box-sizing: border-box;
+        border-radius: 20px;
+     }
 </style>
 <html>
     <body>
         <div class="content">
-            <img th:src="@{${'images/' + image}}"/>
+            <img class="image" th:src="@{${'images/' + image}}"/>
             <h3>This Spring Application Welcome page is hosted on:</h3>
             <h1 th:text="${{server + ':8080'}}"></h1>
             <br />

@@ -19,7 +19,7 @@ services:
       APP_VERSION: v1
 
   spring-app2:
-    image: ashokkumarchoppadandi/hello-spring-app:v1.0
+    image: ashokkumarchoppadandi/hello-spring-app:v2.0
     container_name: spring-app2
     hostname: spring-app2
     networks:

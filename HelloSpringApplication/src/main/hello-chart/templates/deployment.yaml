@@ -26,25 +26,20 @@ spec:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 20
-            periodSeconds: 2
           readinessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 20
-            periodSeconds: 2
           resources:
             limits:
-              cpu: {{ .Values.resources.cpu }}
-              memory: {{ .Values.resources.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
             requests:
-              cpu: {{ .Values.resources.cpu }}
-              memory: {{ .Values.resources.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
           env:
             - name: APP_VERSION
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Release.Name }}-configmap
-                  key: APP_VERSION1
-
+                  key: APP_VERSION

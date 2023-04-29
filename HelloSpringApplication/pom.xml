@@ -12,7 +12,7 @@
 
     <groupId>com.bigdata.docker.spring</groupId>
     <artifactId>hello-spring</artifactId>
-    <version>v1.0</version>
+    <version>v2.0</version>
     <name>HelloSpringApplication</name>
     <description>A simple Spring Application runs inside a docker container</description>
 
