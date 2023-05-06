@@ -74,6 +74,26 @@ CentOS 8:
 
        http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/
 
+       If in case dnf update -y and dnf distro-sync -y fails with the below error:
+
+       # error: /var/cache/dnf/baseos-055ffcb2ec25a27f/packages/kernel-core-4.18.0-489.el8.x86_64.rpm: signature hdr data: BAD, no. of bytes(458616) out of range
+       # Problem opening package kernel-core-4.18.0-489.el8.x86_64.rpm
+       # The downloaded packages were saved in cache until the next successful transaction.
+       # You can remove cached packages by executing 'yum clean packages'.
+       # Error: GPG check FAILED
+       
+       Run the below command:
+
+       sudo dnf update rpm -y
+
+       And then execute:
+
+       dnf distro-sync -y
+
+       OR
+
+       dnf update -y
+
 Rolling Restart:
 
     Note: The Kafka configuration file should only be ending with .yaml. The other extension like .yml is not accepted.
