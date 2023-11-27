@@ -1,0 +1,19 @@
+version: '3'
+
+networks:
+  mysql_network:
+    driver: bridge
+
+services:
+  mysqldb:
+    image: mysql:8.0.35
+    networks:
+      - mysql_network
+    ports:
+      - "3306:3306"
+    hostname: mysqldb
+    environment:
+      MYSQL_DATABASE: db1
+      MYSQL_ROOT_PASSWORD: Password@123
+    volumes:
+      - ./sql-scripts/add_privileges.sql:/docker-entrypoint-initdb.d/add_privileges.sql:ro

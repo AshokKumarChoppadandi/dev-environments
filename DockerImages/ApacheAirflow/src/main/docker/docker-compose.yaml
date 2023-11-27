@@ -1,0 +1,53 @@
+version: '3'
+
+networks:
+  airflow_network:
+    driver: bridge
+
+services:
+  mysqldb:
+    image: mysql:8.0.35
+    networks:
+      - airflow_network
+    ports:
+      - "3306:3306"
+    hostname: mysqldb
+    environment:
+      MYSQL_DATABASE: db1
+      MYSQL_ROOT_PASSWORD: Password@123
+    volumes:
+      - ./configs/airflow-db-setup.sql:/docker-entrypoint-initdb.d/airflow-db-setup.sql:ro
+
+  airflow-web:
+    image: ashokkumarchoppadandi/apache-airflow:latest
+    networks:
+      - airflow_network
+    ports:
+      - "8080:8080"
+    hostname: airflow-web
+    environment:
+      AIRFLOW_HOST: airflow-web
+      AIRFLOW_PORT: 8080
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+pymysql://airflow_user:airflow_pass@mysqldb:3306/airflow_db
+    command:
+      - webserver
+    restart: always
+    depends_on:
+      - mysqldb
+
+  airflow-scheduler:
+    image: ashokkumarchoppadandi/apache-airflow:latest
+    networks:
+      - airflow_network
+    hostname: airflow-scheduler
+    environment:
+      AIRFLOW_HOST: airflow-scheduler
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+pymysql://airflow_user:airflow_pass@mysqldb:3306/airflow_db
+    command:
+      - scheduler
+    restart: always
+    depends_on:
+      - mysqldb
+      - airflow-web
+    volumes:
+      - ./dags:/root/airflow/dags:rw

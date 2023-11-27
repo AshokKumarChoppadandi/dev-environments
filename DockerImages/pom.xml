@@ -27,6 +27,7 @@
         <module>Kibana</module>
         <module>Logstash</module>
         <module>HadoopHiveAtlasHook</module>
+        <module>ApacheAirflow</module>
     </modules>
 
     <properties>
