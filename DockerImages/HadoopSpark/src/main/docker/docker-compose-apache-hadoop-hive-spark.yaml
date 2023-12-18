@@ -1,0 +1,130 @@
+version: '3'
+
+networks:
+  hadoop_cluster:
+    driver: bridge
+
+services:
+  namenode:
+    image: ashokkumarchoppadandi/apache-hadoop-spark:2.7.6-2.3.9-3.3.0
+    networks:
+      - hadoop_cluster
+    ports:
+      - "50070:50070"
+    hostname: namenode
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+    command: namenode
+
+  secondarynamenode:
+    image: ashokkumarchoppadandi/apache-hadoop-spark:2.7.6-2.3.9-3.3.0
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+    ports:
+      - "50030:50030"
+    hostname: secondarynamenode
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+    command: secondarynamenode
+
+  resourcemanager:
+    image: ashokkumarchoppadandi/apache-hadoop-spark:2.7.6-2.3.9-3.3.0
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+    ports:
+      - "8088:8088"
+    hostname: resourcemanager
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+    command: resourcemanager
+
+  historyserver:
+    image: ashokkumarchoppadandi/apache-hadoop-spark:2.7.6-2.3.9-3.3.0
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+    ports:
+      - "19888:19888"
+    hostname: historyserver
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+    command: historyserver
+
+  mysql:
+    image: ashokkumarchoppadandi/mysql:latest
+    networks:
+      - hadoop_cluster
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@123
+      MYSQL_DATABASE: metastore
+
+  slavenode:
+    image: ashokkumarchoppadandi/apache-hadoop-spark:2.7.6-2.3.9-3.3.0
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+      - mysql
+    ports:
+      - "8042:8042"
+      - "35945:35945"
+      - "10002:10002"
+    hostname: slavenode
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql:\/\/mysql\/metastore?createDatabaseIfNotExist=true
+    command:
+      - slavenode
+      - hive
+
+  sparkhistoryserver:
+    image: ashokkumarchoppadandi/apache-hadoop-spark:2.7.6-2.3.9-3.3.0
+    networks:
+      - hadoop_cluster
+    depends_on:
+      - namenode
+      - secondarynamenode
+      - resourcemanager
+      - historyserver
+      - slavenode
+      - mysql
+    ports:
+      - "4040:4040"
+    hostname: sparkhistoryserver
+    environment:
+      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql:\/\/mysql\/metastore?createDatabaseIfNotExist=true
+      NAMENODE_HOST_NAME: namenode
+      SPARK_EVENTLOG_DIR: spark/yarn-logs
+      SPARK_HISTORY_FS_LOGDIRECTORY: spark/yarn-logs
+    command: sparkhistoryserver

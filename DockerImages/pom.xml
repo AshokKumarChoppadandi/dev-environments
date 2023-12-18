@@ -28,6 +28,7 @@
         <module>Logstash</module>
         <module>HadoopHiveAtlasHook</module>
         <module>ApacheAirflow</module>
+        <module>HadoopSpark</module>
     </modules>
 
     <properties>
