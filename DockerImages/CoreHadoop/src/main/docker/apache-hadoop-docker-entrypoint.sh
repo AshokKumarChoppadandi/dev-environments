@@ -1,11 +1,10 @@
 #!/bin/sh
 #set -e
 
-HADOOP_CONFIG_DIR=$HADOOP_HOME/etc/hadoop/
-CORE_SITE=$HADOOP_CONFIG_DIR/core-site.xml
-HDFS_SITE=$HADOOP_CONFIG_DIR/hdfs-site.xml
-YARN_SITE=$HADOOP_CONFIG_DIR/yarn-site.xml
-MAPRED_SITE=$HADOOP_CONFIG_DIR/mapred-site.xml
+CORE_SITE=$HADOOP_CONF_DIR/core-site.xml
+HDFS_SITE=$HADOOP_CONF_DIR/hdfs-site.xml
+YARN_SITE=$HADOOP_CONF_DIR/yarn-site.xml
+MAPRED_SITE=$HADOOP_CONF_DIR/mapred-site.xml
 
 # DEFINING A USAGE FUNCTION
 usage() {
@@ -19,12 +18,12 @@ LOG_FILE_PATH="$HADOOP_HOME"/logs/hadoop--namenode-$(hostname).log
 
 configure_properties() {
   # SETTING UP HADOOP SERVICES PROPERTIES
-  sed -i -e "s/HADOOP_TMP_DIR/$HADOOP_TMP_DIR/" "$CORE_SITE"
-  sed -i -e "s/FS_DEFAULT_NAME/$FS_DEFAULT_NAME/" "$CORE_SITE"
+  sed -i -e "s|HADOOP_TMP_DIR|$HADOOP_TMP_DIR|g" "$CORE_SITE"
+  sed -i -e "s|FS_DEFAULT_NAME|$FS_DEFAULT_NAME|g" "$CORE_SITE"
 
-  sed -i -e "s/DFS_NAMENODE_NAME_DIR/$DFS_NAMENODE_NAME_DIR/" "$HDFS_SITE"
-  sed -i -e "s/DFS_DATANODE_DATA_DIR/$DFS_DATANODE_DATA_DIR/" "$HDFS_SITE"
-  sed -i -e "s/DFS_NAMENODE_CHECKPOINT_DIR/$DFS_NAMENODE_CHECKPOINT_DIR/" "$HDFS_SITE"
+  sed -i -e "s|HADOOP_NAMENODE_DIR|$HADOOP_NAMENODE_DIR|g" "$HDFS_SITE"
+  sed -i -e "s|HADOOP_DATANODE_DIR|$HADOOP_DATANODE_DIR|g" "$HDFS_SITE"
+  sed -i -e "s|HADOOP_SECONDARY_NAMENODE_DIR|$HADOOP_SECONDARY_NAMENODE_DIR|g" "$HDFS_SITE"
   sed -i -e "s/DFS_REPLICATION/$DFS_REPLICATION/" "$HDFS_SITE"
   sed -i -e "s/DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK/$DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK/" "$HDFS_SITE"
 
@@ -56,12 +55,11 @@ start_namenode() {
   # FORMATTING NAMENODE
   echo "Formatting Namenode..."
   hdfs namenode -format
-  sleep 5
 
   # STARTING NAMENODE SERVICE
   echo "Starting Namenode..."
   hadoop-daemon.sh start namenode
-  sleep 10
+
   LOG_FILE_PATH="$HADOOP_HOME"/logs/hadoop--namenode-$(hostname).log
 }
 
@@ -69,7 +67,7 @@ start_secondarynamenode() {
   # STARTING SECONDARY NAMENODE SERVICE
   echo "Starting Secondary Namenode..."
   hadoop-daemon.sh start secondarynamenode
-  sleep 10
+
   LOG_FILE_PATH=$HADOOP_HOME/logs/hadoop--secondarynamenode-$(hostname).log
 }
 
@@ -77,7 +75,7 @@ start_resourcemanager() {
   # STARTING RESOURCE MANAGER SERVICE
   echo "Starting Resource Manager..."
   yarn-daemon.sh start resourcemanager
-  sleep 10
+
   LOG_FILE_PATH=$HADOOP_HOME/logs/yarn--resourcemanager-$(hostname).log
 }
 
@@ -85,7 +83,7 @@ start_historyserver() {
   # STARTING HISTORY SERVER SERVICE
   echo "Starting MapReduce History Server..."
   mr-jobhistory-daemon.sh start historyserver
-  sleep 10
+
   LOG_FILE_PATH=$HADOOP_HOME/logs/mapred--historyserver-$(hostname).log
 }
 
@@ -93,11 +91,13 @@ start_slavenode() {
   # STARTING HISTORY SERVER SERVICE
   echo "Starting Datanode..."
   hadoop-daemon.sh start datanode
-  sleep 5
+
 
   echo "Starting Node Manager..."
   yarn-daemon.sh start nodemanager
-  sleep 5
+
+  hdfs dfs -mkdir -p /user/root /user/hadoop
+  hdfs dfs -chmod -R hadoop /user/hadoop
 
   LOG_FILE_PATH=/dev/null
 }

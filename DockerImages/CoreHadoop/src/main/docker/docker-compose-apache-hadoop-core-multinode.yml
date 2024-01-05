@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 
 networks:
   hadoop_cluster:
@@ -6,12 +6,13 @@ networks:
 
 services:
   namenode:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
     networks:
       - hadoop_cluster
     ports:
       - "50070:50070"
     hostname: namenode
+    restart: always
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 3
@@ -20,14 +21,17 @@ services:
     command: namenode
 
   secondarynamenode:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
+      namenode:
+        condition: service_healthy
+        restart: true
     ports:
-      - "50030:50030"
+      - "50090:50090"
     hostname: secondarynamenode
+    restart: always
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 3
@@ -36,15 +40,17 @@ services:
     command: secondarynamenode
 
   resourcemanager:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
+      namenode:
+        condition: service_healthy
+        restart: true
     ports:
       - "8088:8088"
     hostname: resourcemanager
+    restart: always
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 3
@@ -53,16 +59,20 @@ services:
     command: resourcemanager
 
   historyserver:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
-      - resourcemanager
+      namenode:
+        condition: service_healthy
+        restart: true
+      resourcemanager:
+        condition: service_healthy
+        restart: true
     ports:
       - "19888:19888"
     hostname: historyserver
+    restart: always
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 3
@@ -71,18 +81,27 @@ services:
     command: historyserver
 
   slavenode1:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
-      - resourcemanager
-      - historyserver
+      namenode:
+        condition: service_healthy
+        restart: true
+      secondarynamenode:
+        condition: service_healthy
+        restart: true
+      resourcemanager:
+        condition: service_healthy
+        restart: true
+      historyserver:
+        condition: service_healthy
+        restart: true
     ports:
-      - "18042:18042"
+      - "18042:8042"
       - "15945:35945"
     hostname: slavenode1
+    restart: always
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 3
@@ -91,18 +110,27 @@ services:
     command: slavenode
 
   slavenode2:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
-      - resourcemanager
-      - historyserver
+      namenode:
+        condition: service_healthy
+        restart: true
+      secondarynamenode:
+        condition: service_healthy
+        restart: true
+      resourcemanager:
+        condition: service_healthy
+        restart: true
+      historyserver:
+        condition: service_healthy
+        restart: true
     ports:
       - "28042:18042"
       - "25945:35945"
-    hostname: slavenode12
+    hostname: slavenode2
+    restart: always
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 3
@@ -111,18 +139,27 @@ services:
     command: slavenode
 
   slavenode3:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
-      - resourcemanager
-      - historyserver
+      namenode:
+        condition: service_healthy
+        restart: true
+      secondarynamenode:
+        condition: service_healthy
+        restart: true
+      resourcemanager:
+        condition: service_healthy
+        restart: true
+      historyserver:
+        condition: service_healthy
+        restart: true
     ports:
       - "38042:18042"
       - "35945:35945"
     hostname: slavenode3
+    restart: always
     environment:
       FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
       DFS_REPLICATION: 3

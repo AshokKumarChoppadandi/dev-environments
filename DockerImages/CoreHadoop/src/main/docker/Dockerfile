@@ -1,4 +1,4 @@
-FROM centos:7
+FROM quay.io/centos/centos:stream8
 
 EXPOSE 22/tcp
 EXPOSE 22/udp
@@ -9,50 +9,43 @@ RUN useradd -m -s /bin/bash hadoop
 
 WORKDIR /home/hadoop
 
-LABEL maintainer="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" description="CentOS with Java, Hadoop and Spark installation"
+LABEL author="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" \
+        maintainer="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" \
+        description="CentOS 8 Stream with Java & Core Hadoop"
 
-ENV HADOOP_DOWNLOAD_URL https://archive.apache.org/dist/hadoop/common/hadoop-2.7.6/hadoop-2.7.6.tar.gz
+ARG HADOOP_VERSION=2.7.6
 
+ENV HADOOP_DOWNLOAD_URL https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
 ENV JAVA_HOME /usr/lib/jvm/java
 ENV HADOOP_HOME /usr/local/hadoop
-ENV HADOOP_CONF_DIR /usr/local/hadoop/etc/hadoop
+ENV HADOOP_CONF_DIR $HADOOP_HOME/etc/hadoop/
 
-RUN yum clean all \
-    && rpm --rebuilddb \
-    && yum update -y libselinux \
-    && yum install -y initscripts curl which tar sudo rsync openssh-server openssh-clients java-1.8.0-openjdk-devel wget \
-    && ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa \
-    && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys \
-    && /usr/bin/ssh-keygen -A \
+ENV HADOOP_TMP_DIR $HADOOP_HOME/data/tmp
+ENV HADOOP_NAMENODE_DIR $HADOOP_HOME/data/namenode
+ENV HADOOP_DATANODE_DIR $HADOOP_HOME/data/datanode
+ENV HADOOP_SECONDARY_NAMENODE_DIR $HADOOP_HOME/data/namesecondary
+
+RUN dnf clean all \
+    && dnf update -y libselinux \
+    && dnf install -y initscripts curl which tar sudo rsync openssh-server openssh-clients java-1.8.0-openjdk-devel wget \
     && mkdir /home/hadoop/.ssh \
-    && cp ~/.ssh/id_rsa* /home/hadoop/.ssh/ \
-    && cat /home/hadoop/.ssh/id_rsa.pub >> /home/hadoop/.ssh/authorized_keys \
-    && chown -R hadoop /home/hadoop/.ssh \
-    && wget $HADOOP_DOWNLOAD_URL \
-    && tar -xzvf hadoop-*.tar.gz -C /usr/local/ \
-    && ln -s /usr/local/hadoop-* $HADOOP_HOME \
-    && rm -rf /home/hadoop/hadoop*.tar.gz
-
-ENV PATH $PATH:$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+    && wget --no-check-certificate $HADOOP_DOWNLOAD_URL \
+    && tar -xzvf hadoop-${HADOOP_VERSION}.tar.gz -C /usr/local/ \
+    && ln -s /usr/local/hadoop-${HADOOP_VERSION} $HADOOP_HOME \
+    && rm -rf /home/hadoop/hadoop-${HADOOP_VERSION}.tar.gz
 
 ADD configs/ssh-config /home/hadoop/.ssh/config
 
-COPY configs/* $HADOOP_HOME/etc/hadoop/
-RUN mkdir -p $HADOOP_HOME/data/nameNode $HADOOP_HOME/data/dataNode $HADOOP_HOME/data/namesecondary $HADOOP_HOME/data/tmp $HADOOP_HOME/spark \
-    # && chown -R hadoop /usr/local/hadoop/data/nameNode /usr/local/hadoop/data/dataNode /usr/local/hadoop/data/namesecondary /usr/local/hadoop/data/tmp /usr/local/hadoop/spark \
-    # && echo $JAVA_HOME >> /usr/local/hadoop/etc/hadoop/hadoop-env.sh \
-    && echo "export HDFS_NAMENODE_USER=hadoop" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh \
-    && echo "export HDFS_DATANODE_USER=hadoop" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh \
-    && echo "export HDFS_SECONDARYNAMENODE_USER=hadoop" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh \
+COPY configs/* ${HADOOP_CONF_DIR}
+
+RUN mkdir -p ${HADOOP_TMP_DIR} ${HADOOP_NAMENODE_DIR} ${HADOOP_DATANODE_DIR} ${HADOOP_SECONDARY_NAMENODE_DIR} \
     && chown -R hadoop /home/hadoop/ \
-    && chown -R hadoop $HADOOP_HOME*
+    && chown -R hadoop ${HADOOP_HOME}*
+
+ENV PATH $PATH:$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
 
 # NAMENODE PROPERTIES
-ENV HADOOP_TMP_DIR "\/usr\/local\/hadoop\/data\/tmp"
-ENV FS_DEFAULT_NAME "hdfs:\/\/localhost:9000"
-ENV DFS_NAMENODE_NAME_DIR "\/usr\/local\/hadoop\/data\/namenode"
-ENV DFS_DATANODE_DATA_DIR "\/usr\/local\/hadoop\/data\/datanode"
-ENV DFS_NAMENODE_CHECKPOINT_DIR "\/usr\/local\/hadoop\/data\/namesecondary"
+ENV FS_DEFAULT_NAME "hdfs://localhost:9000"
 ENV DFS_REPLICATION 1
 ENV DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK false
 
@@ -78,8 +71,13 @@ ENV MAPREDUCE_MAP_CPU_VCORES 1
 ENV MAPREDUCE_REDUCE_CPU_VCORES 1
 
 COPY apache-hadoop-docker-entrypoint.sh /home/hadoop/
+COPY ./health_check.sh /home/hadoop/
+
 RUN chmod +x /home/hadoop/apache-hadoop-docker-entrypoint.sh \
+    && chmod +x /home/hadoop/health_check.sh \
     && chown -R hadoop /home/hadoop/
+
+HEALTHCHECK --interval=5s --timeout=5s --start-period=10s --retries=5 CMD /home/hadoop/health_check.sh
 
 USER hadoop
 

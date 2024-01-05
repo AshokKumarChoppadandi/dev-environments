@@ -3,15 +3,15 @@
 <configuration>
     <property>
         <name>dfs.namenode.name.dir</name>
-        <value>DFS_NAMENODE_NAME_DIR</value>
+        <value>HADOOP_NAMENODE_DIR</value>
     </property>
     <property>
         <name>dfs.datanode.data.dir</name>
-        <value>DFS_DATANODE_DATA_DIR</value>
+        <value>HADOOP_DATANODE_DIR</value>
     </property>
     <property>
         <name>dfs.namenode.checkpoint.dir</name>
-        <value>DFS_NAMENODE_CHECKPOINT_DIR</value>
+        <value>HADOOP_SECONDARY_NAMENODE_DIR</value>
     </property>
     <property>
         <name>dfs.replication</name>
