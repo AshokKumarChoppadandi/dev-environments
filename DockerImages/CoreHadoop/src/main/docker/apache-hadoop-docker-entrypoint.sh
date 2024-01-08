@@ -92,7 +92,6 @@ start_slavenode() {
   echo "Starting Datanode..."
   hadoop-daemon.sh start datanode
 
-
   echo "Starting Node Manager..."
   yarn-daemon.sh start nodemanager
 

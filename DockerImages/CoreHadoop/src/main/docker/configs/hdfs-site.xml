@@ -21,4 +21,12 @@
         <name>dfs.namenode.datanode.registration.ip-hostname-check</name>
         <value>DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK</value>
     </property>
+    <property>
+        <name>dfs.client.block.write.replace-datanode-on-failure.policy</name>
+        <value>NEVER</value>
+    </property>
+    <property>
+        <name>dfs.client.block.write.replace-datanode-on-failure.enable</name>
+        <value>false</value>
+    </property>
 </configuration>

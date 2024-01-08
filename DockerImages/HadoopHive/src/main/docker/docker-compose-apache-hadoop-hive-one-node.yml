@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 
 networks:
   hadoop_cluster:
@@ -10,32 +10,41 @@ services:
     networks:
       - hadoop_cluster
     hostname: mysql
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: Password@123
       MYSQL_DATABASE: metastore
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   hadoop:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+        restart: true
     ports:
       - "50070:50070"
       - "50030:50030"
       - "8088:8088"
       - "19888:19888"
-      - "18042:18042"
+      - "18042:8042"
       - "35945:35945"
       - "4040:4040"
       - "10002:10002"
-    hostname: namenode
+    hostname: hadoop
+    restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/hadoop:9000
+      FS_DEFAULT_NAME: hdfs://hadoop:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: hadoop
       HISTORY_SERVER_HOST: hadoop
-      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql:\/\/mysql\/metastore?createDatabaseIfNotExist=true
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
     command:
       - sh
-      - hive

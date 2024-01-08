@@ -20,6 +20,16 @@
         <description>password for connecting to mysql server</description>
     </property>
     <property>
+        <name>hive.start.cleanup.scratchdir</name>
+        <value>HIVE_START_CLEANUP_SCRATCHDIR</value>
+        <description>Enabling Hive Scratch Directory</description>
+    </property>
+    <property>
+        <name>hive.exec.scratchdir</name>
+        <value>HIVE_EXEC_SCRATCHDIR</value>
+        <description>Hive Scratch Directory to store logs and intermediate data</description>
+    </property>
+    <property>
         <name>hive.server2.transport.mode</name>
         <value>HIVE_SERVER2_TRANSPORT_MODE</value>
         <description>Set to http to enable HTTP transport mode</description>

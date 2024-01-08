@@ -14,7 +14,7 @@ services:
     hostname: namenode
     restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
@@ -33,7 +33,7 @@ services:
     hostname: secondarynamenode
     restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
@@ -52,7 +52,7 @@ services:
     hostname: resourcemanager
     restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
@@ -74,7 +74,7 @@ services:
     hostname: historyserver
     restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
@@ -104,7 +104,7 @@ services:
     hostname: slavenode
     restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver

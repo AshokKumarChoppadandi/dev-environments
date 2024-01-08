@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 
 networks:
   hadoop_cluster:
@@ -6,68 +6,82 @@ networks:
 
 services:
   namenode:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
     networks:
       - hadoop_cluster
     ports:
       - "50070:50070"
     hostname: namenode
+    restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
     command: namenode
 
   secondarynamenode:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
+      namenode:
+        condition: service_healthy
+        restart: true
     ports:
-      - "50030:50030"
+      - "50090:50090"
     hostname: secondarynamenode
+    restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
     command: secondarynamenode
 
   resourcemanager:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
+      namenode:
+        condition: service_healthy
+        restart: true
     ports:
       - "8088:8088"
     hostname: resourcemanager
+    restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
     command: resourcemanager
 
   historyserver:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
-      - resourcemanager
+      namenode:
+        condition: service_healthy
+        restart: true
+      resourcemanager:
+        condition: service_healthy
+        restart: true
     ports:
       - "19888:19888"
     hostname: historyserver
+    restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
     command: historyserver
 
   mysql:
@@ -75,32 +89,78 @@ services:
     networks:
       - hadoop_cluster
     hostname: mysql
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: Password@123
       MYSQL_DATABASE: metastore
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
-  hiveslavenode:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8
+  hiveserver2:
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
     networks:
       - hadoop_cluster
     depends_on:
-      - namenode
-      - secondarynamenode
-      - resourcemanager
-      - historyserver
-      - mysql
+      namenode:
+        condition: service_healthy
+        restart: true
+      resourcemanager:
+        condition: service_healthy
+        restart: true
+      historyserver:
+        condition: service_healthy
+        restart: true
+      mysql:
+        condition: service_healthy
+        restart: true
     ports:
-      - "18042:18042"
-      - "35945:35945"
-      - "4040:4040"
       - "10002:10002"
-    hostname: slavenode
+    hostname: hiveserver2
+    restart: always
     environment:
-      FS_DEFAULT_NAME: hdfs:\/\/namenode:9000
+      FS_DEFAULT_NAME: hdfs://namenode:9000
       DFS_REPLICATION: 1
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
-      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql:\/\/mysql\/metastore?createDatabaseIfNotExist=true
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
+    command:
+      - hiveserver2
+
+  slavenode:
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
+    networks:
+      - hadoop_cluster
+    depends_on:
+      namenode:
+        condition: service_healthy
+        restart: true
+      secondarynamenode:
+        condition: service_healthy
+        restart: true
+      resourcemanager:
+        condition: service_healthy
+        restart: true
+      historyserver:
+        condition: service_healthy
+        restart: true
+      hiveserver2:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "18042:8042"
+      - "35945:35945"
+      - "4040:4040"
+    hostname: slavenode
+    restart: always
+    environment:
+      FS_DEFAULT_NAME: hdfs://namenode:9000
+      DFS_REPLICATION: 1
+      YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
+      HISTORY_SERVER_HOST: historyserver
+      JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
     command:
       - slavenode
-      - hive

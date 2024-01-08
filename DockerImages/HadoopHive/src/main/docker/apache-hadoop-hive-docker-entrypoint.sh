@@ -1,14 +1,11 @@
 #!/bin/sh
 #set -e
 
-HADOOP_CONFIG_DIR=$HADOOP_HOME/etc/hadoop/
-HIVE_CONFIG_DIR=$HIVE_HOME/conf
-
-CORE_SITE=$HADOOP_CONFIG_DIR/core-site.xml
-HDFS_SITE=$HADOOP_CONFIG_DIR/hdfs-site.xml
-YARN_SITE=$HADOOP_CONFIG_DIR/yarn-site.xml
-MAPRED_SITE=$HADOOP_CONFIG_DIR/mapred-site.xml
-HIVE_SITE=$HIVE_CONFIG_DIR/hive-site.xml
+CORE_SITE=$HADOOP_CONF_DIR/core-site.xml
+HDFS_SITE=$HADOOP_CONF_DIR/hdfs-site.xml
+YARN_SITE=$HADOOP_CONF_DIR/yarn-site.xml
+MAPRED_SITE=$HADOOP_CONF_DIR/mapred-site.xml
+HIVE_SITE=$HIVE_CONF_DIR/hive-site.xml
 
 # DEFINING A USAGE FUNCTION
 usage() {
@@ -22,12 +19,12 @@ LOG_FILE_PATH="$HADOOP_HOME"/logs/hadoop--namenode-$(hostname).log
 
 configure_properties() {
   # SETTING UP HADOOP SERVICES PROPERTIES
-  sed -i -e "s/HADOOP_TMP_DIR/$HADOOP_TMP_DIR/" "$CORE_SITE"
-  sed -i -e "s/FS_DEFAULT_NAME/$FS_DEFAULT_NAME/" "$CORE_SITE"
+  sed -i -e "s|HADOOP_TMP_DIR|$HADOOP_TMP_DIR|g" "$CORE_SITE"
+  sed -i -e "s|FS_DEFAULT_NAME|$FS_DEFAULT_NAME|g" "$CORE_SITE"
 
-  sed -i -e "s/DFS_NAMENODE_NAME_DIR/$DFS_NAMENODE_NAME_DIR/" "$HDFS_SITE"
-  sed -i -e "s/DFS_DATANODE_DATA_DIR/$DFS_DATANODE_DATA_DIR/" "$HDFS_SITE"
-  sed -i -e "s/DFS_NAMENODE_CHECKPOINT_DIR/$DFS_NAMENODE_CHECKPOINT_DIR/" "$HDFS_SITE"
+  sed -i -e "s|HADOOP_NAMENODE_DIR|$HADOOP_NAMENODE_DIR|g" "$HDFS_SITE"
+  sed -i -e "s|HADOOP_DATANODE_DIR|$HADOOP_DATANODE_DIR|g" "$HDFS_SITE"
+  sed -i -e "s|HADOOP_SECONDARY_NAMENODE_DIR|$HADOOP_SECONDARY_NAMENODE_DIR|g" "$HDFS_SITE"
   sed -i -e "s/DFS_REPLICATION/$DFS_REPLICATION/" "$HDFS_SITE"
   sed -i -e "s/DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK/$DFS_NAMENODE_DATANODE_REGISTRATION_IP_HOSTNAME_CHECK/" "$HDFS_SITE"
 
@@ -54,10 +51,12 @@ configure_properties() {
   sed -i -e "s/MAPREDUCE_MAP_CPU_VCORES/$MAPREDUCE_MAP_CPU_VCORES/" "$MAPRED_SITE"
   sed -i -e "s/MAPREDUCE_REDUCE_CPU_VCORES/$MAPREDUCE_REDUCE_CPU_VCORES/" "$MAPRED_SITE"
 
-  sed -i -e "s/JAVAX_JDO_OPTION_CONNECTIONURL/$JAVAX_JDO_OPTION_CONNECTIONURL/" "$HIVE_SITE"
+  sed -i -e "s|JAVAX_JDO_OPTION_CONNECTIONURL|$JAVAX_JDO_OPTION_CONNECTIONURL|g" "$HIVE_SITE"
   sed -i -e "s/JAVAX_JDO_OPTION_CONNECTIONDRIVERNAME/$JAVAX_JDO_OPTION_CONNECTIONDRIVERNAME/" "$HIVE_SITE"
   sed -i -e "s/JAVAX_JDO_OPTION_CONNECTIONUSERNAME/$JAVAX_JDO_OPTION_CONNECTIONUSERNAME/" "$HIVE_SITE"
   sed -i -e "s/JAVAX_JDO_OPTION_CONNECTIONPASSWORD/$JAVAX_JDO_OPTION_CONNECTIONPASSWORD/" "$HIVE_SITE"
+  sed -i -e "s/HIVE_START_CLEANUP_SCRATCHDIR/$HIVE_START_CLEANUP_SCRATCHDIR/" "$HIVE_SITE"
+  sed -i -e "s|HIVE_EXEC_SCRATCHDIR|$HIVE_EXEC_SCRATCHDIR|g" "$HIVE_SITE"
   sed -i -e "s/HIVE_SERVER2_TRANSPORT_MODE/$HIVE_SERVER2_TRANSPORT_MODE/" "$HIVE_SITE"
   sed -i -e "s/HIVE_SERVER2_THRIFT_HTTP_PORT/$HIVE_SERVER2_THRIFT_HTTP_PORT/" "$HIVE_SITE"
   sed -i -e "s/HIVE_SERVER2_THRIFT_HTTP_MAX_WORKER_THREADS/$HIVE_SERVER2_THRIFT_HTTP_MAX_WORKER_THREADS/" "$HIVE_SITE"
@@ -71,12 +70,11 @@ start_namenode() {
   # FORMATTING NAMENODE
   echo "Formatting Namenode..."
   hdfs namenode -format
-  sleep 5
 
   # STARTING NAMENODE SERVICE
   echo "Starting Namenode..."
   hadoop-daemon.sh start namenode
-  sleep 10
+
   LOG_FILE_PATH="$HADOOP_HOME"/logs/hadoop--namenode-$(hostname).log
 }
 
@@ -84,7 +82,7 @@ start_secondarynamenode() {
   # STARTING SECONDARY NAMENODE SERVICE
   echo "Starting Secondary Namenode..."
   hadoop-daemon.sh start secondarynamenode
-  sleep 10
+
   LOG_FILE_PATH=$HADOOP_HOME/logs/hadoop--secondarynamenode-$(hostname).log
 }
 
@@ -92,7 +90,7 @@ start_resourcemanager() {
   # STARTING RESOURCE MANAGER SERVICE
   echo "Starting Resource Manager..."
   yarn-daemon.sh start resourcemanager
-  sleep 10
+
   LOG_FILE_PATH=$HADOOP_HOME/logs/yarn--resourcemanager-$(hostname).log
 }
 
@@ -100,33 +98,11 @@ start_historyserver() {
   # STARTING HISTORY SERVER SERVICE
   echo "Starting MapReduce History Server..."
   mr-jobhistory-daemon.sh start historyserver
-  sleep 10
+
   LOG_FILE_PATH=$HADOOP_HOME/logs/mapred--historyserver-$(hostname).log
 }
 
-start_slavenode() {
-  # STARTING HISTORY SERVER SERVICE
-  echo "Starting Datanode..."
-  hadoop-daemon.sh start datanode
-  sleep 5
-
-  echo "Starting Node Manager..."
-  yarn-daemon.sh start nodemanager
-  sleep 5
-
-  LOG_FILE_PATH=/dev/null
-}
-
-start_hiveslavenode() {
-  # STARTING HISTORY SERVER SERVICE
-  echo "Starting Datanode..."
-  hadoop-daemon.sh start datanode
-  sleep 5
-
-  echo "Starting Node Manager..."
-  yarn-daemon.sh start nodemanager
-  sleep 120
-
+start_hiveserver() {
   hdfs dfs -mkdir -p /user/hive/warehouse
   hdfs dfs -chmod g+w /user/hive/warehouse
   hdfs dfs -mkdir /tmp
@@ -134,11 +110,26 @@ start_hiveslavenode() {
 
   schematool -dbType mysql -initSchema --verbose
 
-  hdfs dfs -chmod -R 777 /
+  hive --service hiveserver2 --hiveconf hive.root.logger=DRFA --hiveconf hive.log.dir="${HIVE_HOME}"/logs/ --hiveconf hive.log.level=DEBUG &
 
-  sleep 10
+  until [ -f "${HIVE_HOME}"/logs/hive.log ]
+  do
+    sleep 5
+  done
 
-  hive --service hiveserver2 --hiveconf hive.root.logger=DRFA --hiveconf hive.log.level=DEBUG &
+  LOG_FILE_PATH=${HIVE_HOME}/logs/hive.log
+}
+
+start_slavenode() {
+  # STARTING HISTORY SERVER SERVICE
+  echo "Starting Datanode..."
+  hadoop-daemon.sh start datanode
+
+  echo "Starting Node Manager..."
+  yarn-daemon.sh start nodemanager
+
+  hdfs dfs -mkdir -p /user/root /user/hadoop
+  hdfs dfs -chmod -R hadoop /user/hadoop
 
   LOG_FILE_PATH=/dev/null
 }
@@ -156,10 +147,6 @@ SLAVE_NODE_TYPE=$2
 
 select_and_start_slavenode() {
   case "${SLAVE_NODE_TYPE,,}" in
-      "hive" )
-        start_hiveslavenode
-      ;;
-
       "spark" )
         start_sparkslave
       ;;
@@ -179,7 +166,9 @@ start_all() {
   start_secondarynamenode
   start_resourcemanager
   start_historyserver
-  select_and_start_slavenode
+  start_hiveserver
+  # select_and_start_slavenode
+  start_slavenode
   LOG_FILE_PATH="$HADOOP_HOME"/logs/hadoop--namenode-$(hostname).log
 }
 
@@ -212,9 +201,14 @@ case "${SERVICE_TYPE,,}" in
     start_historyserver
   ;;
 
+  "hive" | "hiveserver" | "hiveserver2" )
+    echo "Starting Hive Server2 Service"
+    start_hiveserver
+  ;;
+
   "slavenode" )
     echo "Starting Slave Node"
-    select_and_start_slavenode
+    start_slavenode
   ;;
 
   * )

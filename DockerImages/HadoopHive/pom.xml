@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>HadoopHive</artifactId>
-    <version>2.7.6-2.3.8</version>
+    <version>2.7.6-2.3.8-stream8</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -37,11 +37,11 @@
         <hive.home.dir>/usr/local/hive</hive.home.dir>
         <hive.config.dir>/usr/local/hive/conf</hive.config.dir>
 
-        <hadoop.tmp.dir>\/usr\/local\/hadoop\/data\/tmp</hadoop.tmp.dir>
-        <fs.default.name>hdfs:\/\/localhost:9000</fs.default.name>
-        <dfs.namenode.name.dir>\/usr\/local\/hadoop\/data\/namenode</dfs.namenode.name.dir>
-        <dfs.datanode.data.dir>\/usr\/local\/hadoop\/data\/datanode</dfs.datanode.data.dir>
-        <dfs.namenode.checkpoint.dir>\/usr\/local\/hadoop\/data\/namesecondary</dfs.namenode.checkpoint.dir>
+        <hadoop.tmp.dir>/usr/local/hadoop/data/tmp</hadoop.tmp.dir>
+        <fs.default.name>hdfs://localhost:9000</fs.default.name>
+        <dfs.namenode.name.dir>/usr/local/hadoop/data/namenode</dfs.namenode.name.dir>
+        <dfs.datanode.data.dir>/usr/local/hadoop/data/datanode</dfs.datanode.data.dir>
+        <dfs.namenode.checkpoint.dir>/usr/local/hadoop/data/namesecondary</dfs.namenode.checkpoint.dir>
         <dfs.replication>1</dfs.replication>
         <dfs.namenode.datanode.registration.ip.hostname.check>false</dfs.namenode.datanode.registration.ip.hostname.check>
 
@@ -64,7 +64,7 @@
         <mapreduce.map.cpu.vcores>1</mapreduce.map.cpu.vcores>
         <mapreduce.reduce.cpu.vcores>1</mapreduce.reduce.cpu.vcores>
 
-        <javax.jdo.option.connectionurl>jdbc:mysql:\/\/localhost\/metastore?createDatabaseIfNotExist=true</javax.jdo.option.connectionurl>
+        <javax.jdo.option.connectionurl>jdbc:mysql://localhost/metastore?createDatabaseIfNotExist=true</javax.jdo.option.connectionurl>
         <javax.jdo.option.connectiondrivername>com.mysql.cj.jdbc.Driver</javax.jdo.option.connectiondrivername>
         <javax.jdo.option.connectionusername>hive</javax.jdo.option.connectionusername>
         <javax.jdo.option.connectionpassword>hive</javax.jdo.option.connectionpassword>
