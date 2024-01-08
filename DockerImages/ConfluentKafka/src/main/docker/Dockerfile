@@ -1,6 +1,8 @@
-FROM centos:7
+FROM quay.io/centos/centos:stream8
 
-LABEL maintainer="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>"
+LABEL author="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" \
+        maintainer="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" \
+        description="CentOS 8 Stream with Java and Confluent Kafka"
 
 USER root
 
@@ -9,16 +11,23 @@ WORKDIR /
 ARG CONFLUENT_MAJOR_VERSION=6.2
 ARG CONFLUENT_MINOR_VERSION=0
 
-# ENV CONFLUENT_KAFKA_DOWNLOAD_URL https://packages.confluent.io/archive/${CONFLUENT_MAJOR_VERSION}/confluent-community-${CONFLUENT_MAJOR_VERSION}.${CONFLUENT_MINOR_VERSION}-2.12.tar.gz
 ENV CONFLUENT_KAFKA_DOWNLOAD_URL https://packages.confluent.io/archive/${CONFLUENT_MAJOR_VERSION}/confluent-community-${CONFLUENT_MAJOR_VERSION}.${CONFLUENT_MINOR_VERSION}.tar.gz
 ENV CONFLUENT_HOME /usr/local/confluent
 
-RUN yum update -y \
-    && yum install java-1.8.0-openjdk-devel wget -y \
-    && curl -L $CONFLUENT_KAFKA_DOWNLOAD_URL -o confluent-community.tar.gz \
-    && tar -xzvf confluent-community*.tar.gz* -C /usr/local/ \
-    && ln -s /usr/local/confluent* $CONFLUENT_HOME \
-    && rm -rf confluent-community*.tar.gz*
+# Installing HDFS 2 Sink Connector
+ARG CONFLUENT_KAFKA_CONNECT_HDFS_SINK_VERSION=10.1.7
+ENV HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-hdfs/versions/${CONFLUENT_KAFKA_CONNECT_HDFS_SINK_VERSION}/confluentinc-kafka-connect-hdfs-${CONFLUENT_KAFKA_CONNECT_HDFS_SINK_VERSION}.zip
+
+RUN dnf update -y \
+    && dnf install java-1.8.0-openjdk-devel wget ncurses unzip nc net-tools -y \
+    && wget --no-check-certificate ${CONFLUENT_KAFKA_DOWNLOAD_URL} \
+    && tar -xzvf confluent-community-${CONFLUENT_MAJOR_VERSION}.${CONFLUENT_MINOR_VERSION}.tar.gz -C /usr/local/ \
+    && ln -s /usr/local/confluent-${CONFLUENT_MAJOR_VERSION}.${CONFLUENT_MINOR_VERSION} ${CONFLUENT_HOME} \
+    && rm -rf confluent-community-${CONFLUENT_MAJOR_VERSION}.${CONFLUENT_MINOR_VERSION}.tar.gz \
+    && mkdir ${CONFLUENT_HOME}/data  \
+    && wget --no-check-certificate $HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL \
+    && unzip confluentinc-kafka-connect-hdfs-${CONFLUENT_KAFKA_CONNECT_HDFS_SINK_VERSION}.zip -d $CONFLUENT_HOME/share/java/ \
+    && rm -rf confluentinc-kafka-connect-hdfs-${CONFLUENT_KAFKA_CONNECT_HDFS_SINK_VERSION}.zip
 
 COPY ./configs /usr/local/configs
 
@@ -26,7 +35,7 @@ ENV JAVA_HOME "/usr/lib/jvm/java"
 ENV PATH $CONFLUENT_HOME/bin:$JAVA_HOME/bin:$PATH
 
 # ZOOKEEPER PROPERTIES
-ENV ZOOKEEPER_DATA_DIR "\/tmp\/zookeeper"
+ENV ZOOKEEPER_DATA_DIR "${CONFLUENT_HOME}/data/zookeeper"
 ENV ZOOKEEPER_CLIENT_PORT 2181
 ENV ZOOKEEPER_MAX_CLIENT_CONNECTIONS 0
 ENV ZOOKEEPER_TICK_TIME 2000
@@ -40,15 +49,15 @@ ENV ZOOKEEPER_SYNC_LIMIT 2
 # KAFKA BROKER PROPERTIES
 ENV BROKER_ID 0
 ENV KAFKA_LISTENER_SECURITY_PROTOCOL_MAP "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
-ENV KAFKA_LISTENERS "INTERNAL:\/\/0.0.0.0:9092,EXTERNAL:\/\/0.0.0.0:29092"
-ENV KAFKA_ADVERTISED_LISTENERS "INTERNAL:\/\/localhost:9092,EXTERNAL:\/\/localhost:29092"
+ENV KAFKA_LISTENERS "INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092"
+ENV KAFKA_ADVERTISED_LISTENERS "INTERNAL://localhost:9092,EXTERNAL://localhost:29092"
 ENV KAFKA_INTER_BROKER_LISTENER_NAME "INTERNAL"
 ENV NUM_NETWORK_THREADS 3
 ENV NUM_IO_THREADS 8
 ENV SOCKET_SEND_BUFFER_BYTES 102400
 ENV SOCKET_RECEIVE_BUFFER_BYTES 102400
 ENV SOCKET_REQUEST_MAX_BYTES 104857600
-ENV LOG_DIRS "\/tmp\/kafka-logs"
+ENV LOG_DIRS "${CONFLUENT_HOME}/data/kafka-logs"
 ENV NUM_PARTITIONS 1
 ENV NUM_RECOVERY_THREADS_PER_DATA_DIR 1
 ENV OFFSETS_TOPIC_REPLICATION_FACTOR 1
@@ -66,9 +75,9 @@ ENV CONNECT_WITH_AVRO_DISTRIBUTED true
 ENV BOOTSTRAP_SERVERS localhost:9092
 ENV GROUP_ID connect-cluster
 ENV KEY_CONVERTER io.confluent.connect.avro.AvroConverter
-ENV KEY_CONVERTER_SCHEMA_REGISTRY_URL "http:\/\/localhost:8081"
+ENV KEY_CONVERTER_SCHEMA_REGISTRY_URL "http://localhost:8081"
 ENV VALUE_CONVERTER io.confluent.connect.avro.AvroConverter
-ENV VALUE_CONVERTER_SCHEMA_REGISTRY_URL "http:\/\/localhost:8081"
+ENV VALUE_CONVERTER_SCHEMA_REGISTRY_URL "http://localhost:8081"
 ENV KEY_CONVERTER_SCHEMAS_ENABLE true
 ENV VALUE_CONVERTER_SCHEMAS_ENABLE true
 ENV OFFSET_STORAGE_TOPIC connect-offsets
@@ -84,20 +93,20 @@ ENV CONNECT_REST_HOST 0.0.0.0
 ENV CONNECT_REST_PORT 8083
 ENV CONNECT_REST_ADVERTISED_HOST localhost
 ENV CONNECT_REST_ADVERTISED_PORT 8083
-ENV PLUGIN_PATH "\/usr\/local\/confluent\/share\/java\/"
+ENV PLUGIN_PATH "${CONFLUENT_HOME}/share/java/"
 
 # SCHEMA REGISTRY PROPERTIES
-ENV SCHEMA_REGISTRY_LISTENERS "http:\/\/0.0.0.0:8081"
+ENV SCHEMA_REGISTRY_LISTENERS "http://0.0.0.0:8081"
 ENV KAFKASTORE_BOOTSTRAP_SERVERS localhost:9092
 ENV KAFKASTORE_TOPIC _schemas
 ENV DEBUG false
 
 # KSQLDB PROPERTIES
-ENV KSQL_DB_LISTENERS "http:\/\/0.0.0.0:8088"
+ENV KSQL_DB_LISTENERS "http://0.0.0.0:8088"
 ENV KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE true
 ENV KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE true
 ENV KSQL_LOGGING_PROCESSING_ROWS_INCLUDE true
-ENV KSQL_SCHEMA_REGISTRY_URL "http:\/\/localhost:8081"
+ENV KSQL_SCHEMA_REGISTRY_URL "http://localhost:8081"
 ENV UI_ENABLED true
 ENV KSQL_STREAMS_AUTO_OFFSET_RESET latest
 ENV KSQL_STREAMS_COMMIT_INTERVAL_MS 2000
@@ -107,19 +116,12 @@ ENV KSQL_STREAMS_NUM_STREAM_THREADS 1
 ENV KSQL_SERVICE_ID default_
 ENV KSQL_SINK_PARTITIONS 4
 ENV KSQL_SINK_REPLICAS 1
-ENV KSQL_KSQL_EXTENSION_DIR "\/usr\/local\/confluent\/ext"
-ENV KSQL_KSQL_CONNECT_URL "http:\/\/localhost:8083"
-
-# Installing HDFS 2 Sink Connector
-ARG HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL=https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-hdfs/versions/10.1.7/confluentinc-kafka-connect-hdfs-10.1.7.zip
-
-RUN yum install unzip nc net-tools -y \
-    && wget $HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL \
-    && unzip confluentinc-kafka-connect-hdfs-*.zip -d $CONFLUENT_HOME/share/java/ \
-    && rm -rf confluentinc-kafka-connect-hdfs-*.zip
+ENV KSQL_KSQL_EXTENSION_DIR "${CONFLUENT_HOME}/ext"
+ENV KSQL_KSQL_CONNECT_URL "http://localhost:8083"
 
 COPY ./confluent-kafka-docker-entrypoint.sh /
 COPY ./health_check.sh /
+
 RUN chmod +x /confluent-kafka-docker-entrypoint.sh \
     && chmod +x /health_check.sh
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=5 CMD ./health_check.sh

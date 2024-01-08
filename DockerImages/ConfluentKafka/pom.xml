@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ConfluentKafka</artifactId>
-    <version>6.2.0</version>
+    <version>6.2.0-stream8</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -33,7 +33,7 @@
         <confluent.home.dir>/usr/local/confluent</confluent.home.dir>
 
         <!-- Zookeeper Properties-->
-        <zookeeper.data.dir>\/tmp\/zookeeper</zookeeper.data.dir>
+        <zookeeper.data.dir>${confluent.home.dir}/data/zookeeper</zookeeper.data.dir>
         <zookeeper.client.port>2181</zookeeper.client.port>
         <zookeeper.max.client.connections>0</zookeeper.max.client.connections>
         <zookeeper.enable.server>false</zookeeper.enable.server>
@@ -54,7 +54,7 @@
         <socket.send.buffer.bytes>102400</socket.send.buffer.bytes>
         <socket.receive.buffer.bytes>102400</socket.receive.buffer.bytes>
         <socket.request.max.bytes>104857600</socket.request.max.bytes>
-        <log.dirs>\/tmp\/kafka-logs</log.dirs>
+        <log.dirs>${confluent.home.dir}/data/kafka-logs</log.dirs>
         <default.partitions>1</default.partitions>
         <num.recovery.threads.per.data.dir>1</num.recovery.threads.per.data.dir>
         <offsets.topic.replication.factor>1</offsets.topic.replication.factor>
@@ -87,7 +87,7 @@
         <connect.port>8083</connect.port>
         <connect.rest.advertised.host>localhost</connect.rest.advertised.host>
         <connect.rest.advertised.port>8083</connect.rest.advertised.port>
-        <plugin.path>\/usr\/local\/kafka\/libs</plugin.path>
+        <plugin.path>${confluent.home.dir}/share/java</plugin.path>
 
         <startup.service>sh</startup.service>
     </properties>
