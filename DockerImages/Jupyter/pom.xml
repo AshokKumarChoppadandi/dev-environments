@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.bigdata.docker</groupId>
+        <artifactId>DockerImages</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>Jupyter</artifactId>
+    <version>8stream-client-8.6.1</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <docker.maven.plugin.version>0.44.0</docker.maven.plugin.version>
+        <!--<docker.container.hostname>confluent-kafka-docker-host</docker.container.hostname>
+        <docker.container.name>confluent-kafka-docker</docker.container.name>
+        <docker.network.mode>bridge</docker.network.mode>
+        <docker.network.name>confluent-kafka-docker-network</docker.network.name>
+        <docker.container.port.mapping>9092:9092,2181:2181,8083:8083,8088:8088,8081:8081</docker.container.port.mapping>-->
+        <docker.push.registry>docker.io</docker.push.registry>
+        <docker.pull.registry>docker.io</docker.pull.registry>
+        <docker.hub.username>ashokkumarchoppadandi</docker.hub.username>
+        <docker.hub.password>Narsapur@987</docker.hub.password>
+        <docker.hub.repo.name>ashokkumarchoppadandi</docker.hub.repo.name>
+        <docker.image.name>jupyter</docker.image.name>
+        <!--<confluent.major.version>6.2</confluent.major.version>
+        <confluent.minor.version>0</confluent.minor.version>
+        <confluent.kafka.download.url>https://packages.confluent.io/archive/${confluent.major.version}/confluent-community-${confluent.major.version}.${confluent.minor.version}.tar.gz</confluent.kafka.download.url>
+        <confluent.home.dir>/usr/local/confluent</confluent.home.dir>-->
+
+        <startup.service>sh</startup.service>
+    </properties>
+
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/io.fabric8/docker-maven-plugin -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>0.44.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <verbose>true</verbose>
+                    <!-- For LINUX Environment-->
+                    <!--<dockerHost>unix:///Users/ashchopp/.docker/run/docker.sock</dockerHost>-->
+                    <dockerHost>unix:///var/run/docker.sock</dockerHost>
+
+                    <!-- For Windows Environment-->
+                    <!--<dockerHost>npipe:////./pipe/docker_engine</dockerHost>-->
+                    <authConfig>
+                        <username>${docker.hub.username}</username>
+                        <password>${docker.hub.password}</password>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <name>${docker.hub.repo.name}/${docker.image.name}</name>
+                            <alias/>
+                            <build>
+                                <contextDir>${project.basedir}/src/main/docker/</contextDir>
+                                <!--<assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>-->
+                                <tags>
+                                    <tag>${project.version}</tag>
+                                    <tag>latest</tag>
+                                </tags>
+                                <noCache>False</noCache>
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

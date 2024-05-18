@@ -29,6 +29,7 @@
         <module>HadoopHiveAtlasHook</module>
         <module>ApacheAirflow</module>
         <module>HadoopSpark</module>
+        <module>Jupyter</module>
     </modules>
 
     <properties>
