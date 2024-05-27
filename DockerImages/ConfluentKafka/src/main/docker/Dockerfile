@@ -119,6 +119,22 @@ ENV KSQL_SINK_REPLICAS 1
 ENV KSQL_KSQL_EXTENSION_DIR "${CONFLUENT_HOME}/ext"
 ENV KSQL_KSQL_CONNECT_URL "http://localhost:8083"
 
+# Installing HDFS 2 Sink Connector
+ARG HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL=https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-hdfs/versions/10.1.7/confluentinc-kafka-connect-hdfs-10.1.7.zip
+ARG JDBC_SOURCE_SINK_CONNECTOR_DOWNLOAD_URL=https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-jdbc/versions/10.7.6/confluentinc-kafka-connect-jdbc-10.7.6.zip
+ARG ELASTICSEARCH_SINK_CONNECTOR_DOWNLOAD_URL=https://d2p6pa21dvn84.cloudfront.net/api/plugins/confluentinc/kafka-connect-elasticsearch/versions/14.0.17/confluentinc-kafka-connect-elasticsearch-14.0.17.zip
+
+RUN yum install unzip nc net-tools -y \
+    && wget $HDFS_2_SINK_CONNECTOR_DOWNLOAD_URL \
+    && wget $JDBC_SOURCE_SINK_CONNECTOR_DOWNLOAD_URL \
+    && wget $ELASTICSEARCH_SINK_CONNECTOR_DOWNLOAD_URL \
+    && unzip confluentinc-kafka-connect-hdfs-*.zip -d $CONFLUENT_HOME/share/java/ \
+    && unzip confluentinc-kafka-connect-jdbc-*.zip -d $CONFLUENT_HOME/share/java/ \
+    && unzip confluentinc-kafka-connect-elasticsearch-*.zip -d $CONFLUENT_HOME/share/java/ \
+    && rm -rf confluentinc-kafka-connect-hdfs-*.zip \
+    && rm -rf confluentinc-kafka-connect-jdbc-*.zip \
+    && rm -rf confluentinc-kafka-connect-elasticsearch-*.zip
+
 COPY ./confluent-kafka-docker-entrypoint.sh /
 COPY ./health_check.sh /
 
