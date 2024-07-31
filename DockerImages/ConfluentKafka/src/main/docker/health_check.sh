@@ -13,15 +13,15 @@ case "$HOSTNAME" in
   nc -z "$HOSTNAME" 9092 || exit 1
   ;;
 "schemaregistry")
-  echo "Checking schemaregistry Status..."
+  echo "Checking Schema Registry Status..."
   curl --fail http://"$HOSTNAME":8081 || exit 1
   ;;
-"connect")
-  echo "Checking schemaregistry Status..."
+"connect" | "connect1" | "connect2" | "connect3")
+  echo "Checking Connect Server Status..."
   curl --fail http://"$HOSTNAME":8083/ || exit 1
   ;;
 "ksql")
-  echo "Checking schemaregistry Status..."
+  echo "Checking KSQL Server Status..."
   curl --fail http://"$HOSTNAME":8088/ || exit 1
   ;;
 *)

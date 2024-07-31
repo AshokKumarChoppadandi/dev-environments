@@ -7,7 +7,7 @@ networks:
 
 services:
   kafka:
-    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8
+    image: ashokkumarchoppadandi/confluent-kafka:7.5.4-stream8-with-connectors
     container_name: kafka
     networks:
       - kafka_cluster

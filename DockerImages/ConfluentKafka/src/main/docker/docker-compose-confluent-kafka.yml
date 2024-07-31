@@ -1,4 +1,4 @@
-version: '3'
+# version: '3.8'
 
 networks:
   kafka_cluster:
@@ -6,7 +6,7 @@ networks:
 
 services:
   zookeeper:
-    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8-with-connectors
     networks:
       - kafka_cluster
     ports:
@@ -24,7 +24,7 @@ services:
       - standalone
 
   broker:
-    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8-with-connectors
     networks:
       - kafka_cluster
     depends_on:
@@ -60,7 +60,7 @@ services:
     command: kafka
 
   schemaregistry:
-    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8-with-connectors
     networks:
       - kafka_cluster
     depends_on:
@@ -79,7 +79,7 @@ services:
     command: schemaregistry
 
   connect:
-    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8-with-connectors
     networks:
       - kafka_cluster
     depends_on:
@@ -119,7 +119,7 @@ services:
     command: connect
 
   ksql:
-    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8
+    image: ashokkumarchoppadandi/confluent-kafka:6.2.0-stream8-with-connectors
     networks:
       - kafka_cluster
     depends_on:
