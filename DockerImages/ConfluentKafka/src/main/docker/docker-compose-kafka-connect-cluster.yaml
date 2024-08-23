@@ -1,0 +1,59 @@
+networks:
+  bigdata_cluster:
+    driver: bridge
+    external: true
+
+services:
+  schemaregistry:
+    image: ashokkumarchoppadandi/confluent-kafka:7.5.4-stream8-with-connectors
+    networks:
+      - bigdata_cluster
+    hostname: schemaregistry
+    container_name: schemaregistry
+    restart: always
+    environment:
+      SCHEMA_REGISTRY_LISTENERS: http:\/\/0.0.0.0:8081
+      KAFKASTORE_BOOTSTRAP_SERVERS: "192.168.0.113:9092"
+      KAFKASTORE_TOPIC: "_schemas"
+      DEBUG: "true"
+    ports:
+      - "8081:8081"
+    command: schemaregistry
+
+  connect:
+    image: ashokkumarchoppadandi/confluent-kafka:7.5.4-stream8-with-connectors
+    networks:
+      - bigdata_cluster
+    depends_on:
+      schemaregistry:
+        condition: service_healthy
+        restart: true
+    hostname: connect
+    container_name: connect
+    restart: always
+    environment:
+      CONNECT_WITH_AVRO_DISTRIBUTED: "true"
+      BOOTSTRAP_SERVERS: 192.168.0.113:9092
+      GROUP_ID: connect-cluster
+      KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      KEY_CONVERTER_SCHEMA_REGISTRY_URL: http:\/\/schemaregistry:8081
+      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http:\/\/schemaregistry:8081
+      KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+      VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+      OFFSET_STORAGE_TOPIC: connect-offsets
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_PARTITIONS: 25
+      CONFIG_STORAGE_TOPIC: connect-configs
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_TOPIC: connect-status
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_PARTITIONS: 5
+      OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_REST_HOST: 0.0.0.0
+      CONNECT_REST_PORT: 8083
+      CONNECT_REST_ADVERTISED_HOST: connect
+      CONNECT_REST_ADVERTISED_PORT: 8083
+    ports:
+      - "8083:8083"
+    command: connect
