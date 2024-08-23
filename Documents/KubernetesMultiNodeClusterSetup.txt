@@ -1,0 +1,146 @@
+
+
+1. Create 3 CentOS 8 VMs in Oracle Virtual Box with below users 
+    - root
+    - bigdata
+
+2. Add bigdata as a sudo user
+3. Assign Static IPs to Virtual Machines. For Example:
+    - 192.168.0.191  kube-master.bigdata.com -> Kubernetes Master
+    - 192.168.0.192  kube-worker1.bigdata.com -> Kubernetes Worker1
+    - 192.168.0.193  kube-worker2.bigdata.com -> Kubernetes Worker2
+
+4. Fix CentOS 8 issue to update the packages.
+
+5. Update the OS
+
+6. Disable Swap and the firewall
+
+    sudo swapoff -a
+
+    # Disabling it permanently
+    sudo vi /etc/sysctl.conf
+    vm.swappiness=1
+
+    Optional: remove or comment swap entries in the below file.
+    sudo vi /etc/fstab
+
+    
+
+    sudo systemctl status firewalld.service
+    sudo systemctl stop firewalld.service
+    sudo systemctl disable firewalld.service
+
+7. Configure local ip table to see the Bridged Traffic (Not required if VMs are in Bridged Network)
+ 
+    lsmod | grep br_netfilter
+
+8. Install Docker
+
+    sudo dnf install -y yum-utils
+
+    sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+    sudo dnf install docker-ce docker-ce-cli containerd.io -y
+
+    sudo systemctl start docker
+
+    sudo systemctl enable docker
+
+    sudo groupadd docker
+
+    sudo usermod -aG docker $USER
+
+    newgrp docker
+
+    sudo docker run hello-world
+
+    docker run hello-world
+
+9. Configure Docker Daemon for cgroups management and start Docker
+
+    sudo mkdir /etc/docker
+
+    sudo vi /etc/docker/daemon.json
+
+    {
+        "exec-opts": ["native.cgroupdriver=systemd"],
+        "log-driver": "json-file",
+        "log-opts": {
+            "max-size": "100m"
+        },
+        "storage-driver": "overlay2"
+    }
+
+10. Set SElinux in permissive mode
+
+    sudo setenforce 0
+    cat /etc/selinux/config
+    sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+11. Installing kubeadm, kubelet and kubectl
+
+    sudo vi /etc/yum.repos.d/kubernetes.repo
+
+    [kubernetes]
+    name=Kubernetes
+    baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
+    enabled=1
+    gpgcheck=1
+    gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+    exclude=kubelet kubeadm kubectl
+
+    sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+    sudo systemctl enable --now kubelet
+
+12. Installing Kubernetes Cluster
+
+    On Master Node:
+
+        sudo kubeadm init --pod-network-cidr 10.10.0.0/16 --apiserver-advertise-address 192.168.0.191 --v=5
+
+    On worker nodes:
+
+        sudo kubeadm join 192.168.0.191:6443 --token xg0a6h.jx5kxrkbtyjf2drf \
+        --discovery-token-ca-cert-hash sha256:e7d26f5fa8828753c84bd00b7d83a3ef06b169c6a32c999de6d9081d3ba8b3df
+
+
+13. If following issue arises in Step 12, then follow the resolution steps
+
+    [ERROR CRI]: container runtime is not running: output: E0915 17:32:14.977972
+
+    On each Kubernetes Host (Master & Wrokers):
+
+        sudo rm -rf /etc/containerd/config.toml
+        sudo systemctl restart containerd.service
+        sudo systemctl status containerd.service
+    
+    After this run Step 12 again
+
+14. Setting up configuration to use Kubernetes Cluster
+
+    For regular User:
+
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+    For root User:
+
+    export KUBECONFIG=/etc/kubernetes/admin.conf
+
+    For Checking the nodes in Kubernetes Cluster:
+
+    kubectl get nodes
+
+15. Installing POD networking
+
+    Addons are available at : https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+    For our use case "Weave Net" addon is used.
+
+    Installation:
+
+    kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+
+        
