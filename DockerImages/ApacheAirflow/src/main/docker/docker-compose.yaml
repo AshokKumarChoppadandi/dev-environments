@@ -18,8 +18,11 @@ services:
     volumes:
       - ./configs/airflow-db-setup.sql:/docker-entrypoint-initdb.d/airflow-db-setup.sql:ro
 
+  redis-server:
+    image: redis/7.4.0
+
   airflow-web:
-    image: ashokkumarchoppadandi/apache-airflow:latest
+    image: ashokkumarchoppadandi/apache-airflow:2.7.3
     networks:
       - airflow_network
     ports:
@@ -36,7 +39,7 @@ services:
       - mysqldb
 
   airflow-scheduler:
-    image: ashokkumarchoppadandi/apache-airflow:latest
+    image: ashokkumarchoppadandi/apache-airflow:2.7.3
     networks:
       - airflow_network
     hostname: airflow-scheduler

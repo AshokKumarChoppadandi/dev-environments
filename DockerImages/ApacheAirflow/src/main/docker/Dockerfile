@@ -40,7 +40,7 @@ RUN dnf update -y \
 RUN ln -s /usr/bin/pip3 /usr/bin/pip  \
     && pip install --upgrade pip \
     && pip install pymysql \
-    && pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINTS_FILE}" \
+    && pip install "apache-airflow[celery, redis]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINTS_FILE}" \
     && airflow db init
 
 # ENV AIRFLOW__DATABASE__SQL_ALCHEMY_CONN ${SQL_ALCHEMY_CONN_PREFIX}://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@${AIRFLOW_DB_HOST}:${AIRFLOW_DB_PORT}/${AIRFLOW_DB_NAME}
