@@ -1,12 +1,10 @@
-version: '3.5'
-
 networks:
   hadoop_cluster:
     driver: bridge
 
 services:
   namenode:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream9
     networks:
       - hadoop_cluster
     ports:
@@ -21,13 +19,12 @@ services:
     command: namenode
 
   secondarynamenode:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
     ports:
       - "50090:50090"
     hostname: secondarynamenode
@@ -40,13 +37,12 @@ services:
     command: secondarynamenode
 
   resourcemanager:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
     ports:
       - "8088:8088"
     hostname: resourcemanager
@@ -59,16 +55,14 @@ services:
     command: resourcemanager
 
   historyserver:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
       resourcemanager:
         condition: service_healthy
-        restart: true
     ports:
       - "19888:19888"
     hostname: historyserver
@@ -81,22 +75,18 @@ services:
     command: historyserver
 
   slavenode1:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
       secondarynamenode:
         condition: service_healthy
-        restart: true
       resourcemanager:
         condition: service_healthy
-        restart: true
       historyserver:
         condition: service_healthy
-        restart: true
     ports:
       - "18042:8042"
       - "15945:35945"
@@ -110,22 +100,18 @@ services:
     command: slavenode
 
   slavenode2:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
       secondarynamenode:
         condition: service_healthy
-        restart: true
       resourcemanager:
         condition: service_healthy
-        restart: true
       historyserver:
         condition: service_healthy
-        restart: true
     ports:
       - "28042:18042"
       - "25945:35945"
@@ -139,22 +125,18 @@ services:
     command: slavenode
 
   slavenode3:
-    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream8
+    image: ashokkumarchoppadandi/apache-hadoop:2.7.6-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
       secondarynamenode:
         condition: service_healthy
-        restart: true
       resourcemanager:
         condition: service_healthy
-        restart: true
       historyserver:
         condition: service_healthy
-        restart: true
     ports:
       - "38042:18042"
       - "35945:35945"
