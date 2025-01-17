@@ -53,6 +53,14 @@
         <value>YARN_NODEMANAGER_RESOURCE_CPU_VCORES</value>
     </property>
     <property>
+        <name>yarn.scheduler.maximum-allocation-vcores</name>
+        <value>YARN_SCHEDULER_MAXIMUM_ALLOCATION_VCORES</value>
+    </property>
+    <property>
+        <name>yarn.scheduler.minimum-allocation-vcores</name>
+        <value>YARN_SCHEDULER_MINIMUM_ALLOCATION_VCORES</value>
+    </property>
+    <property>
         <name>yarn.nodemanager.vmem-check-enabled</name>
         <value>YARN_NODEMANAGER_VMEM_CHECK_ENABLED</value>
     </property>

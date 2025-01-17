@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 EXPOSE 22/tcp
 EXPOSE 22/udp
@@ -11,7 +11,7 @@ WORKDIR /home/hadoop
 
 LABEL author="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" \
         maintainer="Ashok Kumar Choppadandi <ashokkumar98778@gmail.com>" \
-        description="CentOS 8 Stream with Java, CoreHadoop and Hive"
+        description="CentOS 9 Stream with Java, CoreHadoop and Hive"
 
 ARG HADOOP_VERSION=2.7.6
 ARG HIVE_VERSION=2.3.9
@@ -34,7 +34,7 @@ ENV HADOOP_SECONDARY_NAMENODE_DIR $HADOOP_HOME/data/namesecondary
 
 RUN dnf clean all \
     && dnf update -y libselinux \
-    && dnf install -y initscripts curl which tar sudo rsync openssh-server openssh-clients java-1.8.0-openjdk-devel wget ncurses \
+    && dnf install -y initscripts which tar sudo rsync openssh-server openssh-clients java-1.8.0-openjdk-devel wget ncurses hostname \
     && mkdir /home/hadoop/.ssh \
     && wget  --no-check-certificate ${HADOOP_DOWNLOAD_URL} \
     && tar -xzvf hadoop-${HADOOP_VERSION}.tar.gz -C /usr/local/ \
@@ -70,10 +70,12 @@ ENV YARN_ACL_ENABLE 0
 ENV YARN_RESOURCEMANAGER_HOSTNAME localhost
 ENV YARN_NODEMANAGER_AUX_SERVICES_MAPREDUCE_SHUFFLE_CLASS org.apache.hadoop.mapred.ShuffleHandler
 ENV YARN_NODEMANAGER_AUX_SERVICES mapreduce_shuffle
-ENV YARN_NODEMANAGER_RESOURCE_MEMORY_MB 4096
-ENV YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB 4096
+ENV YARN_NODEMANAGER_RESOURCE_MEMORY_MB 8192
+ENV YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB 8192
 ENV YARN_SCHEDULER_MINIMUM_ALLOCATION_MB 512
-ENV YARN_NODEMANAGER_RESOURCE_CPU_VCORES 2
+ENV YARN_NODEMANAGER_RESOURCE_CPU_VCORES 4
+ENV YARN_SCHEDULER_MAXIMUM_ALLOCATION_VCORES 4
+ENV YARN_SCHEDULER_MINIMUM_ALLOCATION_VCORES 1
 ENV YARN_NODEMANAGER_VMEM_CHECK_ENABLED false
 ENV YARN_NODEMANAGER_DISK_HEALTH_CHECKER_MAX_DISK_UTILIZATION_PER_DISK_PERCENTAGE 95
 ENV YARN_NODEMANAGER_PMEM_CHECK_ENABLED false

@@ -1,17 +1,16 @@
-version: '3.5'
-
 networks:
   hadoop_cluster:
     driver: bridge
 
 services:
   namenode:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream9
     networks:
       - hadoop_cluster
     ports:
       - "50070:50070"
     hostname: namenode
+    container_name: namenode
     restart: always
     environment:
       FS_DEFAULT_NAME: hdfs://namenode:9000
@@ -19,19 +18,22 @@ services:
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
       JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
+      YARN_NODEMANAGER_RESOURCE_MEMORY_MB: 16384
+      YARN_NODEMANAGER_RESOURCE_CPU_VCORES: 8
+      YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB: 1024
     command: namenode
 
   secondarynamenode:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
     ports:
       - "50090:50090"
     hostname: secondarynamenode
+    container_name: secondarynamenode
     restart: always
     environment:
       FS_DEFAULT_NAME: hdfs://namenode:9000
@@ -39,19 +41,22 @@ services:
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
       JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
+      YARN_NODEMANAGER_RESOURCE_MEMORY_MB: 16384
+      YARN_NODEMANAGER_RESOURCE_CPU_VCORES: 8
+      YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB: 1024
     command: secondarynamenode
 
   resourcemanager:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
     ports:
       - "8088:8088"
     hostname: resourcemanager
+    container_name: resourcemanager
     restart: always
     environment:
       FS_DEFAULT_NAME: hdfs://namenode:9000
@@ -59,22 +64,24 @@ services:
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
       JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
+      YARN_NODEMANAGER_RESOURCE_MEMORY_MB: 16384
+      YARN_NODEMANAGER_RESOURCE_CPU_VCORES: 8
+      YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB: 1024
     command: resourcemanager
 
   historyserver:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
       resourcemanager:
         condition: service_healthy
-        restart: true
     ports:
       - "19888:19888"
     hostname: historyserver
+    container_name: historyserver
     restart: always
     environment:
       FS_DEFAULT_NAME: hdfs://namenode:9000
@@ -82,6 +89,9 @@ services:
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
       JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
+      YARN_NODEMANAGER_RESOURCE_MEMORY_MB: 16384
+      YARN_NODEMANAGER_RESOURCE_CPU_VCORES: 8
+      YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB: 1024
     command: historyserver
 
   mysql:
@@ -89,6 +99,7 @@ services:
     networks:
       - hadoop_cluster
     hostname: mysql
+    container_name: mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: Password@123
@@ -101,25 +112,22 @@ services:
       start_period: 30s
 
   hiveserver2:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
       resourcemanager:
         condition: service_healthy
-        restart: true
       historyserver:
         condition: service_healthy
-        restart: true
       mysql:
         condition: service_healthy
-        restart: true
     ports:
       - "10002:10002"
     hostname: hiveserver2
+    container_name: hiveserver2
     restart: always
     environment:
       FS_DEFAULT_NAME: hdfs://namenode:9000
@@ -127,34 +135,33 @@ services:
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
       JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
+      YARN_NODEMANAGER_RESOURCE_MEMORY_MB: 16384
+      YARN_NODEMANAGER_RESOURCE_CPU_VCORES: 8
+      YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB: 1024
     command:
       - hiveserver2
 
   slavenode:
-    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream8
+    image: ashokkumarchoppadandi/apache-hadoop-hive:2.7.6-2.3.8-stream9
     networks:
       - hadoop_cluster
     depends_on:
       namenode:
         condition: service_healthy
-        restart: true
       secondarynamenode:
         condition: service_healthy
-        restart: true
       resourcemanager:
         condition: service_healthy
-        restart: true
       historyserver:
         condition: service_healthy
-        restart: true
       hiveserver2:
         condition: service_healthy
-        restart: true
     ports:
       - "18042:8042"
       - "35945:35945"
       - "4040:4040"
     hostname: slavenode
+    container_name: slavenode
     restart: always
     environment:
       FS_DEFAULT_NAME: hdfs://namenode:9000
@@ -162,5 +169,8 @@ services:
       YARN_RESOURCEMANAGER_HOSTNAME: resourcemanager
       HISTORY_SERVER_HOST: historyserver
       JAVAX_JDO_OPTION_CONNECTIONURL: jdbc:mysql://mysql/metastore?createDatabaseIfNotExist=true
+      YARN_NODEMANAGER_RESOURCE_MEMORY_MB: 16384
+      YARN_NODEMANAGER_RESOURCE_CPU_VCORES: 8
+      YARN_SCHEDULER_MAXIMUM_ALLOCATION_MB: 1024
     command:
       - slavenode

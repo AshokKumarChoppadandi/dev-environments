@@ -1,1 +1,30 @@
 yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar pi 14 13
+
+yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar pi 1 1
+
+
+yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar pi -Dmapreduce.map.memory=256 -Dmapreduce.reduce.memory=256 1 1
+
+
+nohup yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar pi 10 10 > job1.log 2>&1 &
+nohup yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar pi 10 10 > job2.log 2>&1 &
+nohup yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar pi 15 15 > job3.log 2>&1 &
+nohup yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar pi 20 20 > job4.log 2>&1 &
+
+
+
+nohup spark-submit  --class org.apache.spark.examples.SparkPi --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 1 --num-executors 1 --driver-memory 512m --driver-cores 1 $SPARK_HOME/examples/jars/spark-examples_2.12-3.3.0.jar 10 > log1.txt 2>&1 &
+
+nohup spark-submit  --class org.apache.spark.examples.SparkPi --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 1 --num-executors 1 --driver-memory 512m --driver-cores 1 $SPARK_HOME/examples/jars/spark-examples_2.12-3.3.0.jar 10 > log2.txt 2>&1 &
+
+nohup spark-submit  --class org.apache.spark.examples.SparkPi --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 1 --num-executors 1 --driver-memory 512m --driver-cores 1 $SPARK_HOME/examples/jars/spark-examples_2.12-3.3.0.jar 10 > log3.txt 2>&1 &
+
+nohup spark-submit  --class org.apache.spark.examples.SparkPi --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 1 --num-executors 1 --driver-memory 512m --driver-cores 1 $SPARK_HOME/examples/jars/spark-examples_2.12-3.3.0.jar 10 > log4.txt 2>&1 &
+
+nohup spark-submit  --class io.github.ashokkumarchoppadandi.WordCount --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 2 --num-executors 2 --driver-memory 512m --driver-cores 1 SimpleWordCount-assembly-0.1.0-SNAPSHOT.jar 10 > log1.log 2>&1 &
+
+nohup spark-submit  --class io.github.ashokkumarchoppadandi.WordCount --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 1 --num-executors 1 --driver-memory 512m --driver-cores 1 SimpleWordCount-assembly-0.1.0-SNAPSHOT.jar 100 > log2.log 2>&1 &
+
+nohup spark-submit  --class io.github.ashokkumarchoppadandi.WordCount --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 1 --num-executors 1 --driver-memory 512m --driver-cores 1 SimpleWordCount-assembly-0.1.0-SNAPSHOT.jar 100 > log3.log 2>&1 &
+
+nohup spark-submit  --class io.github.ashokkumarchoppadandi.WordCount --master yarn --deploy-mode cluster --executor-memory 512m --executor-cores 1 --num-executors 1 --driver-memory 512m --driver-cores 1 SimpleWordCount-assembly-0.1.0-SNAPSHOT.jar 100 > log4.log 2>&1 &
