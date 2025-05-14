@@ -1,0 +1,4 @@
+bind-addr: HOST:PORT
+auth: password
+password: LOGIN_PASSWORD
+cert: false
