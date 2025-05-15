@@ -30,6 +30,7 @@
         <module>ApacheAirflow</module>
         <module>HadoopSpark</module>
         <module>Jupyter</module>
+        <module>CodeServer</module>
     </modules>
 
     <properties>
